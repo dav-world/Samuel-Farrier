@@ -1,76 +1,119 @@
-import Link from 'next/link';
+
 import Image from 'next/image';
+import Link from 'next/link';
 import client from '../lib/sanity';
 import { urlFor } from '../lib/sanityImage';
 
-interface ArtworkColumnItem {
-  _id: string;
-  name: string;
-  slug: string;
-  mainImage: {
-    asset: {
-      _ref: string;
-      _type: 'reference';
+interface ArtworkImageWithArtwork {
+  _key: string;
+  asset: {
+    _ref: string;
+    _type: 'reference';
+    metadata: {
+      dimensions: {
+        width: number;
+        height: number;
+        aspectRatio: number;
+      };
     };
-    alt?: string;
-  } | null;
+  };
+  alt?: string;
+  artworkSlug: string;
+  artworkName: string;
 }
 
-async function getArtworksForColumn(): Promise<ArtworkColumnItem[]> {
-  const query = `*[_type == "artwork" && defined(images) && count(images) > 0] | order(year desc, name asc) {
-    _id,
+async function getAllArtworkImages(): Promise<ArtworkImageWithArtwork[]> {
+  // Flatten images and attach parent artwork's slug and name to each image
+  const query = `*[_type == "artwork" && defined(images) && count(images) > 0]{
     name,
     "slug": slug.current,
-    "mainImage": images[0] {
-      asset,
+    images[]{
+      _key,
+      asset->{
+        _id,
+        _type,
+        metadata
+      },
       alt
     }
   }`;
+
   try {
-    const artworks = await client.fetch<ArtworkColumnItem[]>(query);
-    return artworks.filter(art => art.mainImage?.asset);
+    const artworks = await client.fetch<{ name: string; slug: string; images: any[] }[]>(query);
+    // Flatten images and attach artwork info
+    return artworks.flatMap(artwork =>
+      (artwork.images || [])
+        .filter(img => img.asset && img.asset.metadata && img.asset.metadata.dimensions)
+        .map(img => ({
+          ...img,
+          artworkSlug: artwork.slug,
+          artworkName: artwork.name,
+        }))
+    );
   } catch (error) {
-    console.error("Failed to fetch artworks for column:", error);
+    console.error("Failed to fetch all artwork images:", error);
     return [];
   }
 }
 
-// --- Component ---
-export default async function HomePage() {
-  const artworks = await getArtworksForColumn();
-  const sanityImageWidthTarget = 900; // e.g., 1920 * 0.5 = 860, round up slightly
+// Inline styles matching ArtworkDetail component
+const imageContainerStyle: React.CSSProperties = {
+  maxWidth: '100%',
+  maxHeight: '80vh',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  margin: '1rem 0',
+  overflow: 'hidden',
+};
+
+const imageStyle: React.CSSProperties = {
+  width: '100%',
+  height: 'auto',
+  maxHeight: '80vh',
+  objectFit: 'contain',
+  display: 'block',
+};
+
+export default async function AllArtworkImagesPage() {
+  const images = await getAllArtworkImages();
+  const sanityImageWidthTarget = 896;
 
   return (
-    <div className="w-full flex justify-center p-4 md:p-6">
-
-      {artworks.length === 0 ? (
-        <div className="w-full max-w-4xl text-center text-gray-600"> {/* Added container for message */}
-          <p>No artworks with images found.</p>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem', boxSizing: 'border-box' }}>
+      {images.length === 0 ? (
+        <div style={{ width: '100%', maxWidth: '896px', textAlign: 'center', color: '#718096' }}>
+          <p>No artwork images found.</p>
         </div>
       ) : (
-        <div className="w-[50%] max-w-4xl space-y-8 md:space-y-10">
-          {artworks.map((artwork, index) => (
-            <Link
-              key={artwork._id}
-              href={`/artwork/${artwork.slug}`}
-              className="group block w-full overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 bg-gray-100"
-            >
-              <div className="w-full relative">
-                <Image
-                  src={urlFor(artwork.mainImage!.asset) // Non-null assertion ok due to filter
-                    .width(sanityImageWidthTarget) // Optimize image size from Sanity
-                    .auto('format')
-                    .url()}
-                  alt={artwork.mainImage?.alt || artwork.name || 'Artwork image'}
-                  width={sanityImageWidthTarget}  // Required prop: Hint for intrinsic width
-                  height={sanityImageWidthTarget} // Required prop: HINT for height (aspect ratio handled by CSS)
-                  className="w-full h-auto object-contain block"
-                  sizes="(max-width: 768px) calc(100vw - 2rem), 50vw" // Account for padding on smaller screens
-                  priority={index < 3}
-                />
+        <div style={{ width: '100%', maxWidth: '896px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2.5rem' }}>
+          {images.map((img) => {
+            const imgWidth = sanityImageWidthTarget;
+            const aspectRatio = img.asset.metadata.dimensions.aspectRatio;
+            const imgHeight = Math.round(imgWidth / aspectRatio);
+
+            return (
+              <div
+                key={img._key}
+                style={imageContainerStyle}
+              >
+                <Link href={`/artwork/${img.artworkSlug}`} style={{ display: 'block', width: '100%' }}>
+                  {/* Use <img> for full style control, or <Image> with style prop */}
+                  <img
+                    src={urlFor(img.asset)
+                      .width(imgWidth)
+                      .auto('format')
+                      .url()}
+                    alt={img.alt || `Artwork image from "${img.artworkName}"`}
+                    width={imgWidth}
+                    height={imgHeight}
+                    style={imageStyle}
+                    loading="lazy"
+                  />
+                </Link>
               </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

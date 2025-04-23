@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 
 import React from 'react';
 import { urlFor } from '../../../lib/sanityImage';
@@ -26,7 +24,7 @@ interface Artwork {
   purchase_price: number | null;
   price: number | null;
   notes: PortableTextBlock[];
-  relatedExhibitions?: Array<{ _id: string; name: string }>;
+  relatedExhibitions?: Array<{ _id: string; name: string; slug: string }>;
   category: string;
 }
 
@@ -34,11 +32,38 @@ interface ArtworkDetailProps {
   artwork: Artwork;
 }
 
+const imageContainerStyle: React.CSSProperties = {
+  maxWidth: '100%',
+  maxHeight: '80vh',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  margin: '1rem 0',
+  overflow: 'hidden',
+};
+
+const imageStyle: React.CSSProperties = {
+  width: '100%',
+  height: 'auto',
+  maxHeight: '80vh',
+  objectFit: 'contain',
+  display: 'block',
+};
+
+const blockImageStyle: React.CSSProperties = {
+  width: '100%',
+  height: 'auto',
+  maxHeight: '60vh',
+  objectFit: 'contain',
+  display: 'block',
+  margin: '1rem 0',
+};
+
 const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
   if (!artwork) {
     return <div>Artwork not found</div>;
   }
-  console.log(artwork.notes);
+
   return (
     <div>
       <h1>{artwork.name}</h1>
@@ -81,17 +106,17 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
 
       {/* Images */}
       <div>
-        {artwork.images && (
+        {artwork.images && artwork.images.length > 0 && (
           <div>
             <strong>Images:</strong>
             {artwork.images.map(image => (
-              <div key={image._key}>
+              <div key={image._key} style={imageContainerStyle}>
                 <img
                   src={urlFor(image.asset).url()}
-                  alt={image.alt}
-                  // style={{ maxWidth: '500px', width: '100%', height: 'auto' }}
+                  alt={image.alt || ''}
+                  style={imageStyle}
                 />
-                <p>{image.caption}</p>
+                {image.caption && <p style={{ textAlign: 'center', marginTop: '0.5rem' }}>{image.caption}</p>}
               </div>
             ))}
           </div>
@@ -107,7 +132,7 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
             const isVimeo = videoUrl.includes('vimeo.com');
 
             return (
-              <div key={`video-${index}`}>
+              <div key={`video-${index}`} style={{ margin: '1rem 0' }}>
                 {isYouTube ? (
                   <iframe
                     width="560"
@@ -117,6 +142,7 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
+                    style={imageContainerStyle}
                   ></iframe>
                 ) : isVimeo ? (
                   <iframe
@@ -126,6 +152,7 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
                     frameBorder="0"
                     allow="autoplay; fullscreen; picture-in-picture"
                     allowFullScreen
+                    style={imageContainerStyle}
                   ></iframe>
                 ) : (
                   <a href={videoUrl} target="_blank" rel="noopener noreferrer">
@@ -143,7 +170,6 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
         <div>
           <h2>Press</h2>
           {artwork.press.map((block, index) => {
-            // Handle different block types (e.g., block of text or image)
             if (block._type === 'block') {
               return (
                 <p key={index}>
@@ -171,17 +197,17 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
                 </p>
               );
             } else if (block._type === 'image') {
-              // Handle image block
               return (
-                <img
-                  key={index}
-                  src={urlFor(block).url()}
-                  alt="Press image"
-                  // style={{ maxWidth: '500px', width: '100%' }}
-                />
+                <div key={index} style={imageContainerStyle}>
+                  <img
+                    src={urlFor(block).url()}
+                    alt="Press image"
+                    style={blockImageStyle}
+                  />
+                </div>
               );
             } else {
-              return null; // Fallback for unhandled block types
+              return null;
             }
           })}
         </div>
@@ -216,15 +242,11 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
         </div>
       )}
 
-      {/* Price */}
-      {/* {artwork.price !== null && <p>Price: {artwork.price}</p>} */}
-
-     {/* Notes */}
+      {/* Notes */}
       {artwork.notes?.length > 0 && (
         <div>
           <h2>Notes</h2>
           {artwork.notes.map((block, index) => {
-            // Handle different block types (e.g., block of text or image)
             if (block._type === 'block') {
               return (
                 <p key={index}>
@@ -252,17 +274,17 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
                 </p>
               );
             } else if (block._type === 'image') {
-              // Handle image block
               return (
-                <img
-                  key={index}
-                  src={urlFor(block).url()}
-                  alt="Note image"
-                  // style={{ maxWidth: '500px', width: '100%' }}
-                />
+                <div key={index} style={imageContainerStyle}>
+                  <img
+                    src={urlFor(block).url()}
+                    alt="Note image"
+                    style={blockImageStyle}
+                  />
+                </div>
               );
             } else {
-              return null; // Fallback for unhandled block types
+              return null;
             }
           })}
         </div>
@@ -272,8 +294,8 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
       {artwork?.relatedExhibitions && artwork?.relatedExhibitions.length > 0 && (
         <div>
           <h2>Related Exhibitions</h2>
-          {artwork?.relatedExhibitions.map((exhibition, slug) => (
-            <p key={slug}>
+          {artwork?.relatedExhibitions.map((exhibition, idx) => (
+            <p key={exhibition._id || idx}>
               <Link href={`/exhibition/${exhibition.slug}`} className="text-blue-500 hover:underline">{exhibition.name}</Link>
             </p>
           ))}

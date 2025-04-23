@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS for Navigation List */
+.nav-list {
+  list-style-type: none; /* Remove bullets */
+  padding: 0;
+  margin: 0;
+}
+
+.nav-item {
+  cursor: pointer; /* Hand pointer on hover */
+}
+
+.nav-sublist {
+  list-style-type: none; /* Remove bullets for sublist */
+  padding: 0;
+  margin: 0;
+}
+
+.nav-subitem {
+  cursor: pointer; /* Hand pointer on hover */
+}
+
+.image-max-width {
+  max-width: 500px;
+  width: 100%;
+  height: auto;
+  margin: 1rem 0; /* Optional spacing */
+}
+/* :root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+.artwork-detail, .exhibition-detail {
+  color:black;
+} */
+
+.container {
+  display: flex;
+}
+
+.left-column {
+  width: 30%; /* Adjust as needed */
+  padding-right: 20px;
+}
+
+.right-column {
+  width: 70%; /* Adjust as needed */
+  padding-left: 20px;
+}
+
+.image-container {
+  text-align: center;
+}
+
+.image-container img {
+  max-width: 100%;
+  height: auto;
+}
+
+.info-container {
+  margin-top: 20px;
+}

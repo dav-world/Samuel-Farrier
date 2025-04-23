@@ -82,11 +82,11 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
                 <p key={index}>
                   {block.children.map((child: any, childIndex: number) => {
                     const linkMark = child.marks?.find((mark: string) => {
-                      return block.markDefs?.some((def) => def._key === mark && def._type === 'link');
+                      return Array.isArray(block.markDefs) && block.markDefs.some((def) => def._key === mark && def._type === 'link');
                     });
 
                     if (linkMark) {
-                      const link = block.markDefs?.find((def) => def._key === linkMark);
+                      const link = Array.isArray(block.markDefs) ? block.markDefs.find((def) => def._key === linkMark) : undefined;
                       return (
                         <a
                           key={childIndex}
@@ -176,16 +176,16 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
         <div>
           <h2>Press</h2>
           {artwork.press.map((block, index) => {
-            if (block._type === 'block') {
+            if (block._type === 'block' && Array.isArray(block.children)) {
               return (
                 <p key={index}>
-                  {block.children?.map((child: any, childIndex: number) => {
+                  {block.children.map((child: any, childIndex: number) => {
                     const linkMark = child.marks?.find((mark: string) => {
-                      return block.markDefs?.some((def) => def._key === mark && def._type === 'link');
+                      return Array.isArray(block.markDefs) && block.markDefs.some((def) => def._key === mark && def._type === 'link');
                     });
 
                     if (linkMark) {
-                      const link = block.markDefs?.find((def) => def._key === linkMark);
+                      const link = Array.isArray(block.markDefs) ? block.markDefs.find((def) => def._key === linkMark) : undefined;
                       return (
                         <a
                           key={childIndex}
@@ -253,16 +253,16 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
         <div>
           <h2>Notes</h2>
           {artwork.notes.map((block, index) => {
-            if (block._type === 'block') {
+            if (block._type === 'block' && Array.isArray(block.children)) {
               return (
                 <p key={index}>
-                  {block.children?.map((child: any, childIndex: number) => {
+                  {block.children.map((child: any, childIndex: number) => {
                     const linkMark = child.marks?.find((mark: string) => {
-                      return block.markDefs?.some((def) => def._key === mark && def._type === 'link');
+                      return Array.isArray(block.markDefs) && block.markDefs.some((def) => def._key === mark && def._type === 'link');
                     });
 
                     if (linkMark) {
-                      const link = block.markDefs?.find((def) => def._key === linkMark);
+                      const link = Array.isArray(block.markDefs) ? block.markDefs.find((def) => def._key === linkMark) : undefined;
                       return (
                         <a
                           key={childIndex}

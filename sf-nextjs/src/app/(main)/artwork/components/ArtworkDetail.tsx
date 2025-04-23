@@ -76,31 +76,37 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
       {artwork.description?.length > 0 && (
         <div>
           <h2>Description</h2>
-          {artwork.description.map((block, index) => (
-            <p key={index}>
-              {block.children?.map((child: any, childIndex: number) => {
-                const linkMark = child.marks?.find((mark: string) => {
-                  return block.markDefs?.some((def) => def._key === mark && def._type === 'link');
-                });
+          {artwork.description.map((block, index) => {
+            if (block._type === 'block' && Array.isArray(block.children)) {
+              return (
+                <p key={index}>
+                  {block.children.map((child: any, childIndex: number) => {
+                    const linkMark = child.marks?.find((mark: string) => {
+                      return block.markDefs?.some((def) => def._key === mark && def._type === 'link');
+                    });
 
-                if (linkMark) {
-                  const link = block.markDefs?.find((def) => def._key === linkMark);
-                  return (
-                    <a
-                      key={childIndex}
-                      href={link?.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: 'blue', textDecoration: 'underline' }}
-                    >
-                      {child.text}
-                    </a>
-                  );
-                }
-                return <span key={childIndex}>{child.text}</span>;
-              })}
-            </p>
-          ))}
+                    if (linkMark) {
+                      const link = block.markDefs?.find((def) => def._key === linkMark);
+                      return (
+                        <a
+                          key={childIndex}
+                          href={link?.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: 'blue', textDecoration: 'underline' }}
+                        >
+                          {child.text}
+                        </a>
+                      );
+                    }
+                    return <span key={childIndex}>{child.text}</span>;
+                  })}
+                </p>
+              );
+            }
+            // Optionally handle other block types (e.g., images) here
+            return null;
+          })}
         </div>
       )}
 

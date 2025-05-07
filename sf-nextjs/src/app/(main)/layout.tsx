@@ -1,15 +1,10 @@
-// --- REVISED: app/(main)/layout.tsx ---
-// Added a "Home" link to the navigation list.
 
-"use client"; // Required for hooks like useState and useEffect
+"use client";
 
 import { useEffect, useState, ReactNode } from "react";
 import Link from 'next/link';
-// Ensure these paths are correct relative to app/(main)/layout.tsx
 import client from "../lib/sanity";
-import { urlFor } from "../lib/sanityImage"; // Keep if needed elsewhere, not used in this version directly
 
-// --- Interfaces (Good Practice) ---
 interface SanityItem {
   _id: string;
   name: string;
@@ -18,16 +13,21 @@ interface SanityItem {
 interface Artwork extends SanityItem {}
 interface Exhibition extends SanityItem {}
 interface Commercial extends SanityItem {}
-// --- End Interfaces ---
 
 export default function MainAppLayout({ children }: { children: ReactNode }) {
-  // --- State for Navigation Accordion ---
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([]);
   const [commercials, setCommercials] = useState<Commercial[]>([]);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  // --- Data Fetching Functions ---
+  // Fetch data on mount
+  useEffect(() => {
+    fetchArtworks();
+    fetchExhibitions();
+    fetchCommercials();
+  }, []);
+
   const fetchArtworks = async () => {
     try {
       const artworkResponse = await client.fetch<Artwork[]>(`
@@ -38,7 +38,7 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
   };
 
   const fetchExhibitions = async () => {
-     try {
+    try {
       const exhibitionResponse = await client.fetch<Exhibition[]>(`
         *[_type == "exhibition"] | order(year desc, name asc) { _id, name, "slug": slug.current }
       `);
@@ -54,148 +54,234 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
       setCommercials(commercialResponse);
     } catch (error) { console.error("Failed to fetch commercials:", error); }
   };
-  // --- End Data Fetching Functions ---
 
-  // --- Accordion Click Handler ---
+  // Accordion click handler
   const handleSectionClick = (section: string) => {
-    // Toggle behavior: If clicking the same section, collapse it. Otherwise, expand the new one.
     if (expandedSection === section) {
       setExpandedSection(null);
     } else {
       setExpandedSection(section);
-      // Fetch data only if the section is being opened and data hasn't been loaded yet
       if (section === "artwork" && artworks.length === 0) fetchArtworks();
       if (section === "exhibition" && exhibitions.length === 0) fetchExhibitions();
       if (section === "commercial" && commercials.length === 0) fetchCommercials();
     }
   };
-  // --- End Accordion Click Handler ---
 
-  // --- Initial Data Fetching on Layout Mount ---
-  // Fetches the lists when the layout first loads.
-  // Alternatively, remove this useEffect to only fetch when a section is expanded.
+  // Close mobile nav on route change (optional, for better UX)
   useEffect(() => {
-      fetchArtworks();
-      fetchExhibitions();
-      fetchCommercials();
+    const handleRouteChange = () => setMobileNavOpen(false);
+    window.addEventListener('hashchange', handleRouteChange);
+    window.addEventListener('popstate', handleRouteChange);
+    return () => {
+      window.removeEventListener('hashchange', handleRouteChange);
+      window.removeEventListener('popstate', handleRouteChange);
+    };
   }, []);
-  // --- End Initial Data Fetching ---
 
-  // --- JSX Layout Structure ---
+  // Helper: close nav on link click (mobile only)
+  const closeMobileNav = () => setMobileNavOpen(false);
+
+  // Height of the mobile header (should match the header's height in px)
+  const mobileHeaderHeight = 56;
+
+  // Padding for links and headers (matches px-4 py-3 from header)
+  const linkPaddingClasses = "px-4 py-3";
+
   return (
-    // Main container using Flexbox for side-by-side columns on medium+ screens
-    <div className="container mx-auto flex flex-col md:flex-row p-4 min-h-screen">
+    <>
+      {/* Mobile Header Bar */}
+      <header
+        className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center h-14 px-4"
+        style={{ height: `${mobileHeaderHeight}px` }}
+      >
+        <button
+          aria-label="Open navigation menu"
+          onClick={() => setMobileNavOpen(true)}
+          type="button"
+          className="bg-white rounded p-2 shadow border"
+        >
+          <span className="sr-only">Open navigation menu</span>
+          {/* Hamburger Icon */}
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round" className="feather feather-menu">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        {/* Removed the word "Menu" */}
+      </header>
 
-      {/* Left Navigation Column */}
-      <nav className="left-column w-full md:w-1/3 lg:w-1/4 xl:w-1/5 pr-0 md:pr-6 mb-4 md:mb-0 md:sticky md:top-0 md:h-screen md:overflow-y-auto border-r border-gray-200">
-         {/* Removed the site title */}
+      {/* Overlay for mobile nav */}
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 z-30 md:hidden"
+          onClick={closeMobileNav}
+          aria-label="Close navigation overlay"
+        />
+      )}
 
-         {/* Navigation List */}
-         <ul className="space-y-4 nav-list pt-4 md:pt-0"> {/* Added top padding for spacing */}
+      {/* Main Layout */}
+      <div
+        className="container mx-auto flex flex-col md:flex-row p-4 min-h-screen relative"
+        style={{
+          // Add top padding on mobile to prevent content being covered by header
+          paddingTop: `calc(${mobileHeaderHeight}px + 1rem)`,
+        }}
+      >
+        {/* Sidebar Navigation */}
+        <nav
+          className={`
+            left-column
+            fixed top-0 left-0 h-full z-40
+            bg-white md:bg-transparent
+            shadow-lg md:shadow-none
+            border-r border-gray-200 md:border-none
+            w-4/5 max-w-xs
+            transform transition-transform duration-300 ease-in-out
+            ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}
+            md:static md:translate-x-0 md:w-1/3 lg:w-1/4 xl:w-1/5 md:h-screen md:overflow-y-auto md:block
+          `}
+          style={{
+            minWidth: '220px',
+            // On mobile, start below the header
+            top: mobileHeaderHeight,
+            height: `calc(100% - ${mobileHeaderHeight}px)`,
+          }}
+          aria-label="Sidebar navigation"
+        >
+          {/* Close button (mobile only) */}
+          <div className="flex items-center justify-between md:hidden px-4 py-3 border-b border-gray-200">
+            {/* Removed the word "Menu" */}
+            <span className="sr-only">Navigation</span>
+            <button
+              className="text-gray-700 hover:text-black"
+              aria-label="Close navigation menu"
+              onClick={closeMobileNav}
+              type="button"
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" className="feather feather-x">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
 
-            {/* --- ADDED HOME LINK --- */}
+          {/* Navigation List */}
+          <ul className="nav-list pt-0 md:pt-0">
+            {/* Home Link */}
             <li className="nav-item">
-                <Link href="/" className="text-lg font-bold hover:underline block py-1">
-                  Home
-                </Link>
+              <Link
+                href="/"
+                className={`text-lg font-bold hover:underline block ${linkPaddingClasses}`}
+                onClick={closeMobileNav}
+              >
+                Home
+              </Link>
             </li>
-            {/* --- END HOME LINK --- */}
-
             {/* Artworks Section */}
             <li className="nav-item">
-              {/* Using <p> tag for header, matching previous style */}
               <p
-                  onClick={() => handleSectionClick("artwork")}
-                  className="text-lg font-bold cursor-pointer hover:underline" // Style from page.tsx nav
+                onClick={() => handleSectionClick("artwork")}
+                className={`text-lg font-bold cursor-pointer hover:underline block ${linkPaddingClasses}`}
               >
-                  Works
+                Works
               </p>
-              {/* Conditional rendering of the sub-list */}
               {expandedSection === "artwork" && (
-                  <ul className="mt-2 space-y-1 nav-sublist pl-4"> {/* Sub-list styling */}
-                  {artworks.length > 0 ? ( // Check if artworks are loaded
-                      artworks.map((artwork) => ( // Map through artworks
+                <ul className="mt-2 nav-sublist pl-4">
+                  {artworks.length > 0 ? (
+                    artworks.map((artwork) => (
                       <li key={artwork._id} className="nav-subitem text-left">
-                          {/* Link to the individual artwork page */}
-                          <Link href={`/artwork/${artwork.slug}`} className="block py-1 hover:text-blue-600 transition-colors duration-150">
-                            {artwork.name} {/* Display artwork name */}
-                          </Link>
+                        <Link
+                          href={`/artwork/${artwork.slug}`}
+                          className={`block py-2 hover:text-blue-600 transition-colors duration-150 ${linkPaddingClasses}`}
+                          onClick={closeMobileNav}
+                        >
+                          {artwork.name}
+                        </Link>
                       </li>
-                      ))
-                  ) : ( // Display loading indicator if artworks are not yet loaded
-                      <li className="text-gray-500 italic px-1 py-1">Loading...</li>
+                    ))
+                  ) : (
+                    <li className={`text-gray-500 italic ${linkPaddingClasses}`}>Loading...</li>
                   )}
-                  </ul>
+                </ul>
               )}
             </li>
-
-            {/* Exhibitions Section (Similar structure as Artworks) */}
+            {/* Exhibitions Section */}
             <li className="nav-item">
-             <p
-                  onClick={() => handleSectionClick("exhibition")}
-                  className="text-lg font-bold cursor-pointer hover:underline"
+              <p
+                onClick={() => handleSectionClick("exhibition")}
+                className={`text-lg font-bold cursor-pointer hover:underline block ${linkPaddingClasses}`}
               >
-                  Exhibitions
+                Exhibitions
               </p>
               {expandedSection === "exhibition" && (
-                  <ul className="mt-2 space-y-1 nav-sublist pl-4">
+                <ul className="mt-2 nav-sublist pl-4">
                   {exhibitions.length > 0 ? (
-                      exhibitions.map((exhibition) => (
+                    exhibitions.map((exhibition) => (
                       <li key={exhibition._id} className="nav-subitem text-left">
-                          <Link href={`/exhibition/${exhibition.slug}`} className="block py-1 hover:text-blue-600 transition-colors duration-150">
-                            {exhibition.name}
-                          </Link>
+                        <Link
+                          href={`/exhibition/${exhibition.slug}`}
+                          className={`block py-2 hover:text-blue-600 transition-colors duration-150 ${linkPaddingClasses}`}
+                          onClick={closeMobileNav}
+                        >
+                          {exhibition.name}
+                        </Link>
                       </li>
-                      ))
+                    ))
                   ) : (
-                      <li className="text-gray-500 italic px-1 py-1">Loading...</li>
+                    <li className={`text-gray-500 italic ${linkPaddingClasses}`}>Loading...</li>
                   )}
-                  </ul>
+                </ul>
               )}
             </li>
-
-            {/* Commercials Section (Similar structure as Artworks) */}
+            {/* Commercials Section */}
             <li className="nav-item">
               <p
-                  onClick={() => handleSectionClick("commercial")}
-                  className="text-lg font-bold cursor-pointer hover:underline"
+                onClick={() => handleSectionClick("commercial")}
+                className={`text-lg font-bold cursor-pointer hover:underline block ${linkPaddingClasses}`}
               >
-                  Commercial
+                Commercial
               </p>
               {expandedSection === "commercial" && (
-                  <ul className="mt-2 space-y-1 nav-sublist pl-4">
+                <ul className="mt-2 nav-sublist pl-4">
                   {commercials.length > 0 ? (
-                      commercials.map((commercial) => (
+                    commercials.map((commercial) => (
                       <li key={commercial._id} className="nav-subitem text-left">
-                          <Link href={`/commercial/${commercial.slug}`} className="block py-1 hover:text-blue-600 transition-colors duration-150">
-                            {commercial.name}
-                          </Link>
+                        <Link
+                          href={`/commercial/${commercial.slug}`}
+                          className={`block py-2 hover:text-blue-600 transition-colors duration-150 ${linkPaddingClasses}`}
+                          onClick={closeMobileNav}
+                        >
+                          {commercial.name}
+                        </Link>
                       </li>
-                      ))
+                    ))
                   ) : (
-                      <li className="text-gray-500 italic px-1 py-1">Loading...</li>
+                    <li className={`text-gray-500 italic ${linkPaddingClasses}`}>Loading...</li>
                   )}
-                  </ul>
+                </ul>
               )}
             </li>
-
-            {/* Contact Section - Direct link to the contact page */}
+            {/* Contact Section */}
             <li className="nav-item">
-                <Link href="/contact" className="text-lg font-bold hover:underline block py-1">
-                  About
-                </Link>
+              <Link
+                href="/contact"
+                className={`text-lg font-bold hover:underline block ${linkPaddingClasses}`}
+                onClick={closeMobileNav}
+              >
+                About
+              </Link>
             </li>
+          </ul>
+        </nav>
 
-         </ul>
-      </nav>
-
-      {/* Right Content Column - Renders the actual page content */}
-      <main className="right-column w-full md:w-2/3 lg:w-3/4 xl:w-4/5 pl-0 md:pl-6">
-        {/* The `children` prop represents the content of the specific page being rendered */}
-        {children}
-      </main>
-
-    </div>
+        {/* Right Content Column */}
+        <main className="right-column w-full md:w-2/3 lg:w-3/4 xl:w-4/5 pl-0 md:pl-6">
+          {children}
+        </main>
+      </div>
+    </>
   );
 }
-// --- END OF FILE: app/(main)/layout.tsx ---

@@ -1,4 +1,3 @@
-
 import Image from 'next/image';
 import Link from 'next/link';
 import client from '../lib/sanity';
@@ -20,6 +19,16 @@ interface ArtworkImageWithArtwork {
   alt?: string;
   artworkSlug: string;
   artworkName: string;
+}
+
+// Helper to get fixed width and aspect-ratio-correct height
+function getFixedWidthDimensions(asset: any, fixedWidth: number) {
+  const origWidth = asset?.metadata?.dimensions?.width || 800;
+  const origHeight = asset?.metadata?.dimensions?.height || 600;
+  const aspectRatio = asset?.metadata?.dimensions?.aspectRatio || (origWidth / origHeight);
+  const width = fixedWidth;
+  const height = Math.round(width / aspectRatio);
+  return { width, height };
 }
 
 async function getAllArtworkImages(): Promise<ArtworkImageWithArtwork[]> {
@@ -59,7 +68,6 @@ async function getAllArtworkImages(): Promise<ArtworkImageWithArtwork[]> {
 // Inline styles matching ArtworkDetail component
 const imageContainerStyle: React.CSSProperties = {
   maxWidth: '100%',
-  maxHeight: '80vh',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
@@ -70,52 +78,60 @@ const imageContainerStyle: React.CSSProperties = {
 const imageStyle: React.CSSProperties = {
   width: '100%',
   height: 'auto',
-  maxHeight: '80vh',
   objectFit: 'contain',
   display: 'block',
 };
 
 export default async function AllArtworkImagesPage() {
   const images = await getAllArtworkImages();
-  const sanityImageWidthTarget = 896;
+  const sanityImageWidthTarget = 600; // Set to 600 if you want to match detail pages
 
   return (
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem', boxSizing: 'border-box' }}>
-      {images.length === 0 ? (
-        <div style={{ width: '100%', maxWidth: '896px', textAlign: 'center', color: '#718096' }}>
-          <p>No artwork images found.</p>
-        </div>
-      ) : (
-        <div style={{ width: '100%', maxWidth: '896px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2.5rem' }}>
-          {images.map((img) => {
-            const imgWidth = sanityImageWidthTarget;
-            const aspectRatio = img.asset.metadata.dimensions.aspectRatio;
-            const imgHeight = Math.round(imgWidth / aspectRatio);
+    <div>
+      <div
+        style={{
+          width: '100%',
+          maxWidth: `${sanityImageWidthTarget}px`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          // padding: '1rem',
+          boxSizing: 'border-box',
+        }}
+      >
+        {images.length === 0 ? (
+          <div style={{ width: '100%', textAlign: 'center', color: '#718096' }}>
+            <p>No artwork images found.</p>
+          </div>
+        ) : (
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2.5rem' }}>
+            {images.map((img) => {
+              const { width, height } = getFixedWidthDimensions(img.asset, sanityImageWidthTarget);
 
-            return (
-              <div
-                key={img._key}
-                style={imageContainerStyle}
-              >
-                <Link href={`/artwork/${img.artworkSlug}`} style={{ display: 'block', width: '100%' }}>
-                  {/* Use <img> for full style control, or <Image> with style prop */}
-                  <img
-                    src={urlFor(img.asset)
-                      .width(imgWidth)
-                      .auto('format')
-                      .url()}
-                    alt={img.alt || `Artwork image from "${img.artworkName}"`}
-                    width={imgWidth}
-                    height={imgHeight}
-                    style={imageStyle}
-                    loading="lazy"
-                  />
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              return (
+                <div
+                  key={img._key}
+                  style={{ ...imageContainerStyle, width }}
+                >
+                  <Link href={`/artwork/${img.artworkSlug}`} style={{ display: 'block', width: '100%' }}>
+                    <Image
+                      src={urlFor(img.asset)
+                        .width(width)
+                        .auto('format')
+                        .url()}
+                      alt={img.alt || `Artwork image from "${img.artworkName}"`}
+                      width={width}
+                      height={height}
+                      style={imageStyle}
+                      loading="lazy"
+                    />
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

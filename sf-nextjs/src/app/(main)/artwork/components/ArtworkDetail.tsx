@@ -1,8 +1,17 @@
-
 import React from 'react';
 import { urlFor } from '../../../lib/sanityImage';
 import { PortableTextBlock } from '@sanity/types';
 import Link from 'next/link';
+import Image from 'next/image';
+
+// Type for Sanity image block
+interface SanityImageBlock {
+  _type: 'image';
+  asset: any;
+  alt?: string;
+  caption?: string;
+  [key: string]: any;
+}
 
 interface Artwork {
   _id: string;
@@ -34,7 +43,6 @@ interface ArtworkDetailProps {
 
 const imageContainerStyle: React.CSSProperties = {
   maxWidth: '100%',
-  maxHeight: '80vh',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
@@ -45,7 +53,6 @@ const imageContainerStyle: React.CSSProperties = {
 const imageStyle: React.CSSProperties = {
   width: '100%',
   height: 'auto',
-  maxHeight: '80vh',
   objectFit: 'contain',
   display: 'block',
 };
@@ -53,11 +60,26 @@ const imageStyle: React.CSSProperties = {
 const blockImageStyle: React.CSSProperties = {
   width: '100%',
   height: 'auto',
-  maxHeight: '60vh',
   objectFit: 'contain',
   display: 'block',
   margin: '1rem 0',
 };
+
+const FIXED_IMAGE_WIDTH = 600;
+
+// Helper to get fixed width and aspect-ratio-correct height
+function getFixedWidthDimensions(asset: any, fixedWidth: number) {
+  const origWidth = asset?.metadata?.dimensions?.width || 800;
+  const origHeight = asset?.metadata?.dimensions?.height || 600;
+  const width = fixedWidth;
+  const height = Math.round(origHeight * (width / origWidth));
+  return { width, height };
+}
+
+// Type guard for Sanity image block
+function isSanityImageBlock(block: any): block is SanityImageBlock {
+  return block && block._type === 'image' && !!block.asset;
+}
 
 const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
   if (!artwork) {
@@ -104,7 +126,6 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
                 </p>
               );
             }
-            // Optionally handle other block types (e.g., images) here
             return null;
           })}
         </div>
@@ -115,16 +136,24 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
         {artwork.images && artwork.images.length > 0 && (
           <div>
             <strong>Images:</strong>
-            {artwork.images.map(image => (
-              <div key={image._key} style={imageContainerStyle}>
-                <img
-                  src={urlFor(image.asset).url()}
-                  alt={image.alt || ''}
-                  style={imageStyle}
-                />
-                {image.caption && <p style={{ textAlign: 'center', marginTop: '0.5rem' }}>{image.caption}</p>}
-              </div>
-            ))}
+            {artwork.images.map(image => {
+              if (isSanityImageBlock(image)) {
+                const { width, height } = getFixedWidthDimensions(image.asset, FIXED_IMAGE_WIDTH);
+                return (
+                  <div key={image._key} style={{ ...imageContainerStyle, width }}>
+                    <Image
+                      src={urlFor(image.asset).url()}
+                      alt={image.alt || ''}
+                      width={width}
+                      height={height}
+                      style={imageStyle}
+                    />
+                    {image.caption && <p style={{ textAlign: 'center', marginTop: '0.5rem' }}>{image.caption}</p>}
+                  </div>
+                );
+              }
+              return null;
+            })}
           </div>
         )}
       </div>
@@ -202,12 +231,15 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
                   })}
                 </p>
               );
-            } else if (block._type === 'image') {
+            } else if (isSanityImageBlock(block)) {
+              const { width, height } = getFixedWidthDimensions(block.asset, FIXED_IMAGE_WIDTH);
               return (
-                <div key={index} style={imageContainerStyle}>
-                  <img
-                    src={urlFor(block).url()}
+                <div key={index} style={{ ...imageContainerStyle, width }}>
+                  <Image
+                    src={urlFor(block.asset).url()}
                     alt="Press image"
+                    width={width}
+                    height={height}
                     style={blockImageStyle}
                   />
                 </div>
@@ -279,12 +311,15 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
                   })}
                 </p>
               );
-            } else if (block._type === 'image') {
+            } else if (isSanityImageBlock(block)) {
+              const { width, height } = getFixedWidthDimensions(block.asset, FIXED_IMAGE_WIDTH);
               return (
-                <div key={index} style={imageContainerStyle}>
-                  <img
-                    src={urlFor(block).url()}
+                <div key={index} style={{ ...imageContainerStyle, width }}>
+                  <Image
+                    src={urlFor(block.asset).url()}
                     alt="Note image"
+                    width={width}
+                    height={height}
                     style={blockImageStyle}
                   />
                 </div>

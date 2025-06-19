@@ -130,6 +130,11 @@ export const exhibitionType = defineType({
       of: [{ type: 'url' }],
     }),
     defineField({
+      name: 'homescreen',
+      title: 'Show on Home Screen',
+      type: 'boolean',
+    }),
+    defineField({
       name: 'notes',
       title: 'Notes',
       type: 'array',

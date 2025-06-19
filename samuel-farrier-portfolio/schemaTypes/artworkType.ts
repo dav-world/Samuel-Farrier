@@ -102,6 +102,11 @@ export const artworkType = defineType({
       },
     }),
     defineField({
+      name: 'homescreen',
+      title: 'Show on Home Screen',
+      type: 'boolean',
+    }),
+    defineField({
       name: 'exhibited',
       title: 'Exhibited',
       type: 'boolean',
@@ -196,7 +201,7 @@ export const artworkType = defineType({
           { title: 'Drawing', value: 'drawing' },
           { title: 'Sculpture', value: 'sculpture' },
           { title: 'Performance', value: 'performance' },
-          { title: 'Installation', value: 'installation' },
+          { title: 'Installatiosanity startsanity startsanity startn', value: 'installation' },
           { title: 'Book', value: 'book' },
           { title: 'Other', value: 'other' },
         ],

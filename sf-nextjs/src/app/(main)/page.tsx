@@ -19,9 +19,28 @@ interface ArtworkImageWithArtwork {
   alt?: string;
   artworkSlug: string;
   artworkName: string;
+  type: 'artwork';
 }
 
-// Helper to get fixed width and aspect-ratio-correct height
+interface ExhibitionImageWithExhibition {
+  _key: string;
+  asset: {
+    _ref: string;
+    _type: 'reference';
+    metadata: {
+      dimensions: {
+        width: number;
+        height: number;
+        aspectRatio: number;
+      };
+    };
+  };
+  alt?: string;
+  exhibitionSlug: string;
+  exhibitionName: string;
+  type: 'exhibition';
+}
+
 function getFixedWidthDimensions(asset: any, fixedWidth: number) {
   const origWidth = asset?.metadata?.dimensions?.width || 800;
   const origHeight = asset?.metadata?.dimensions?.height || 600;
@@ -31,9 +50,24 @@ function getFixedWidthDimensions(asset: any, fixedWidth: number) {
   return { width, height };
 }
 
-async function getAllArtworkImages(): Promise<ArtworkImageWithArtwork[]> {
-  // Flatten images and attach parent artwork's slug and name to each image
-  const query = `*[_type == "artwork" && defined(images) && count(images) > 0]{
+async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | ExhibitionImageWithExhibition)[]> {
+  // Query for artworks with homescreen == true
+  const artworkQuery = `*[_type == "artwork" && homescreen == true && defined(images) && count(images) > 0]{
+    name,
+    "slug": slug.current,
+    images[]{
+      _key,
+      asset->{
+        _id,
+        _type,
+        metadata
+      },
+      alt
+    }
+  }`;
+
+  // Query for exhibitions with homescreen == true
+  const exhibitionQuery = `*[_type == "exhibition" && homescreen == true && defined(images) && count(images) > 0]{
     name,
     "slug": slug.current,
     images[]{
@@ -48,24 +82,41 @@ async function getAllArtworkImages(): Promise<ArtworkImageWithArtwork[]> {
   }`;
 
   try {
-    const artworks = await client.fetch<{ name: string; slug: string; images: any[] }[]>(query);
-    // Flatten images and attach artwork info
-    return artworks.flatMap(artwork =>
+    const [artworks, exhibitions] = await Promise.all([
+      client.fetch<{ name: string; slug: string; images: any[] }[]>(artworkQuery),
+      client.fetch<{ name: string; slug: string; images: any[] }[]>(exhibitionQuery),
+    ]);
+
+    const artworkImages: ArtworkImageWithArtwork[] = artworks.flatMap(artwork =>
       (artwork.images || [])
         .filter(img => img.asset && img.asset.metadata && img.asset.metadata.dimensions)
         .map(img => ({
           ...img,
           artworkSlug: artwork.slug,
           artworkName: artwork.name,
+          type: 'artwork' as const,
         }))
     );
+
+    const exhibitionImages: ExhibitionImageWithExhibition[] = exhibitions.flatMap(exhibition =>
+      (exhibition.images || [])
+        .filter(img => img.asset && img.asset.metadata && img.asset.metadata.dimensions)
+        .map(img => ({
+          ...img,
+          exhibitionSlug: exhibition.slug,
+          exhibitionName: exhibition.name,
+          type: 'exhibition' as const,
+        }))
+    );
+
+    // Combine and sort if needed (e.g., by name or random)
+    return [...artworkImages, ...exhibitionImages];
   } catch (error) {
-    console.error("Failed to fetch all artwork images:", error);
+    console.error("Failed to fetch homescreen images:", error);
     return [];
   }
 }
 
-// Inline styles matching ArtworkDetail component
 const imageContainerStyle: React.CSSProperties = {
   maxWidth: '100%',
   display: 'flex',
@@ -82,9 +133,9 @@ const imageStyle: React.CSSProperties = {
   display: 'block',
 };
 
-export default async function AllArtworkImagesPage() {
-  const images = await getAllArtworkImages();
-  const sanityImageWidthTarget = 600; // Set to 600 if you want to match detail pages
+export default async function AllHomescreenImagesPage() {
+  const images = await getAllHomescreenImages();
+  const sanityImageWidthTarget = 600;
 
   return (
     <div>
@@ -95,31 +146,38 @@ export default async function AllArtworkImagesPage() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          // padding: '1rem',
           boxSizing: 'border-box',
         }}
       >
         {images.length === 0 ? (
           <div style={{ width: '100%', textAlign: 'center', color: '#718096' }}>
-            <p>No artwork images found.</p>
+            <p>No homescreen images found.</p>
           </div>
         ) : (
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2.5rem' }}>
             {images.map((img) => {
               const { width, height } = getFixedWidthDimensions(img.asset, sanityImageWidthTarget);
 
+              // Determine link based on type
+              let href = '';
+              if (img.type === 'artwork') {
+                href = `/artwork/${(img as ArtworkImageWithArtwork).artworkSlug}`;
+              } else {
+                href = `/exhibition/${(img as ExhibitionImageWithExhibition).exhibitionSlug}`;
+              }
+
               return (
                 <div
                   key={img._key}
                   style={{ ...imageContainerStyle, width }}
                 >
-                  <Link href={`/artwork/${img.artworkSlug}`} style={{ display: 'block', width: '100%' }}>
+                  <Link href={href} style={{ display: 'block', width: '100%' }}>
                     <Image
                       src={urlFor(img.asset)
                         .width(width)
                         .auto('format')
                         .url()}
-                      alt={img.alt || `Artwork image from "${img.artworkName}"`}
+                      alt={img.alt || ''}
                       width={width}
                       height={height}
                       style={imageStyle}

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, ReactNode } from "react";
@@ -87,6 +86,49 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
   // Padding for links and headers (matches px-4 py-3 from header)
   const linkPaddingClasses = "px-4 py-3";
 
+  // Animated Hamburger/X Icon (cross-browser, Safari-safe)
+  function HamburgerXIcon({ open }: { open: boolean }) {
+    // Use group <g> with transform for better Safari support
+    // Center lines at (16,16), rotate as a group, and animate y positions for the lines
+    // This ensures the X is perfectly centered and animation is smooth everywhere
+    return (
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+        <g>
+          <rect
+            x="6"
+            y={open ? 15.5 : 10}
+            width="20"
+            height="3"
+            rx="1.5"
+            fill="currentColor"
+            style={{
+              transition: "y 0.3s cubic-bezier(.4,2,.6,1), transform 0.3s cubic-bezier(.4,2,.6,1)",
+              transformOrigin: "16px 17px",
+              transform: open
+                ? "rotate(45deg)"
+                : "rotate(0deg)",
+            }}
+          />
+          <rect
+            x="6"
+            y={open ? 15.5 : 19}
+            width="20"
+            height="3"
+            rx="1.5"
+            fill="currentColor"
+            style={{
+              transition: "y 0.3s cubic-bezier(.4,2,.6,1), transform 0.3s cubic-bezier(.4,2,.6,1)",
+              transformOrigin: "16px 17px",
+              transform: open
+                ? "rotate(-45deg)"
+                : "rotate(0deg)",
+            }}
+          />
+        </g>
+      </svg>
+    );
+  }
+
   return (
     <>
       {/* Mobile Header Bar */}
@@ -95,21 +137,16 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
         style={{ height: `${mobileHeaderHeight}px` }}
       >
         <button
-          aria-label="Open navigation menu"
-          onClick={() => setMobileNavOpen(true)}
+          aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+          onClick={() => setMobileNavOpen((open) => !open)}
           type="button"
-          className="bg-white rounded p-2 shadow border"
+          className="bg-white rounded p-2 shadow border flex items-center justify-center"
         >
-          <span className="sr-only">Open navigation menu</span>
-          {/* Hamburger Icon */}
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round" className="feather feather-menu">
-            <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
+          <span className="sr-only">
+            {mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+          </span>
+          <HamburgerXIcon open={mobileNavOpen} />
         </button>
-        {/* Removed the word "Menu" */}
       </header>
 
       {/* Overlay for mobile nav */}
@@ -139,6 +176,7 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
             border-r border-gray-200 md:border-none
             w-4/5 max-w-xs
             transform transition-transform duration-300 ease-in-out
+            overflow-y-auto md:overflow-y-auto
             ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}
             md:static md:translate-x-0 md:w-1/3 lg:w-1/4 xl:w-1/5 md:h-screen md:overflow-y-auto md:block
           `}
@@ -150,24 +188,6 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
           }}
           aria-label="Sidebar navigation"
         >
-          {/* Close button (mobile only) */}
-          <div className="flex items-center justify-between md:hidden px-4 py-3 border-b border-gray-200">
-            {/* Removed the word "Menu" */}
-            <span className="sr-only">Navigation</span>
-            <button
-              className="text-gray-700 hover:text-black"
-              aria-label="Close navigation menu"
-              onClick={closeMobileNav}
-              type="button"
-            >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                strokeLinecap="round" strokeLinejoin="round" className="feather feather-x">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          </div>
-
           {/* Navigation List */}
           <ul className="nav-list pt-0 md:pt-0">
             {/* Home Link */}
@@ -177,7 +197,7 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
                 className={`text-lg font-bold hover:underline block ${linkPaddingClasses}`}
                 onClick={closeMobileNav}
               >
-                Home
+                Samuel Farrier
               </Link>
             </li>
             {/* Artworks Section */}
@@ -237,7 +257,7 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
               )}
             </li>
             {/* Commercials Section */}
-            <li className="nav-item">
+            {/* <li className="nav-item">
               <p
                 onClick={() => handleSectionClick("commercial")}
                 className={`text-lg font-bold cursor-pointer hover:underline block ${linkPaddingClasses}`}
@@ -263,7 +283,7 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
                   )}
                 </ul>
               )}
-            </li>
+            </li> */}
             {/* Contact Section */}
             <li className="nav-item">
               <Link

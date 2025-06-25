@@ -89,10 +89,10 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
   return (
     <div>
       <h1>{artwork.name}</h1>
-      <p>Year: {artwork.year}</p>
-      {artwork.date && <p>Date: {new Date(artwork.date).toLocaleDateString()}</p>}
-      <p>Dimensions: {artwork.dimensions}</p>
-      <p>Medium: {artwork.medium}</p>
+      <p>{artwork.year}</p>
+      {artwork.date && <p>{new Date(artwork.date).toLocaleDateString()}</p>}
+      <p>{artwork.dimensions}</p>
+      <p>{artwork.medium}</p>
 
       {/* Description */}
       {artwork.description?.length > 0 && (
@@ -135,7 +135,6 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
       <div>
         {artwork.images && artwork.images.length > 0 && (
           <div>
-            <strong>Images:</strong>
             {artwork.images.map(image => {
               if (isSanityImageBlock(image)) {
                 const { width, height } = getFixedWidthDimensions(image.asset, FIXED_IMAGE_WIDTH);
@@ -251,83 +250,14 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
         </div>
       )}
 
-      {/* Visibility */}
-      {artwork.visibility && <p>Visibility: {artwork.visibility}</p>}
-
       {/* Exhibited */}
       {artwork.exhibited && (
         <div>
-          <p>Exhibited: Yes</p>
           {artwork.exhibitionLink && (
             <p>
               Exhibition Link: <a href={artwork.exhibitionLink} target="_blank" rel="noopener noreferrer">{artwork.exhibitionLink}</a>
             </p>
           )}
-        </div>
-      )}
-
-      {/* Available */}
-      {artwork.available && <p>Available: {artwork.available}</p>}
-
-      {/* Buyer Information */}
-      {artwork.available === 'no' && (
-        <div>
-          {artwork.buyer && <p>Buyer: {artwork.buyer}</p>}
-          {artwork.date_purchased && (
-            <p>Date Purchased: {new Date(artwork.date_purchased).toLocaleDateString()}</p>
-          )}
-          {artwork.purchase_price && <p>Purchase Price: {artwork.purchase_price}</p>}
-        </div>
-      )}
-
-      {/* Notes */}
-      {artwork.notes?.length > 0 && (
-        <div>
-          <h2>Notes</h2>
-          {artwork.notes.map((block, index) => {
-            if (block._type === 'block' && Array.isArray(block.children)) {
-              return (
-                <p key={index}>
-                  {block.children.map((child: any, childIndex: number) => {
-                    const linkMark = child.marks?.find((mark: string) => {
-                      return Array.isArray(block.markDefs) && block.markDefs.some((def) => def._key === mark && def._type === 'link');
-                    });
-
-                    if (linkMark) {
-                      const link = Array.isArray(block.markDefs) ? block.markDefs.find((def) => def._key === linkMark) : undefined;
-                      return (
-                        <a
-                          key={childIndex}
-                          href={link?.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: 'blue', textDecoration: 'underline' }}
-                        >
-                          {child.text}
-                        </a>
-                      );
-                    }
-                    return <span key={childIndex}>{child.text}</span>;
-                  })}
-                </p>
-              );
-            } else if (isSanityImageBlock(block)) {
-              const { width, height } = getFixedWidthDimensions(block.asset, FIXED_IMAGE_WIDTH);
-              return (
-                <div key={index} style={{ ...imageContainerStyle, width }}>
-                  <Image
-                    src={urlFor(block.asset).url()}
-                    alt="Note image"
-                    width={width}
-                    height={height}
-                    style={blockImageStyle}
-                  />
-                </div>
-              );
-            } else {
-              return null;
-            }
-          })}
         </div>
       )}
 

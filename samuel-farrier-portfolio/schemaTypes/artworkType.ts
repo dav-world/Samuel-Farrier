@@ -194,41 +194,9 @@ export const artworkType = defineType({
       name: 'categories',
       title: 'Categories',
       type: 'array',
-      of: [
-        {
-          type: 'object',
-          name: 'category',
-          title: 'Category',
-          fields: [
-            {
-              name: 'title',
-              title: 'Category Name',
-              type: 'string',
-              validation: Rule => Rule.required(),
-            },
-            {
-              name: 'value',
-              title: 'Value',
-              type: 'value',
-              options: {
-                source: 'title',
-                maxLength: 50,
-                slugify: (input: string) =>
-                  input
-                    .toLowerCase()
-                    .replace(/\s+/g, '-')
-                    .replace(/[^a-z0-9\-]/g, '')
-                    .slice(0, 50),
-              },
-              validation: Rule => Rule.required(),
-            },
-          ],
-        },
-      ],
+      of: [{ type: 'string' }],
       options: {
-        // No fixed list, allow any category
-        layout: 'tags',
+        layout: 'tags', // Allows you to add multiple options as tags
       },
     }),
-  ],
 })

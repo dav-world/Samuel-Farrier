@@ -282,13 +282,13 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
         <p>
           Categories:{' '}
           {artwork.categories.map((category, idx) => (
-            <React.Fragment key={category || idx}>
+            <React.Fragment key={category.slug || idx}>
               <Link
-                href={`/category/${encodeURIComponent(category)}`}
+                href={`/category/${encodeURIComponent(category.slug)}`}
                 className="text-blue-500 hover:underline"
-                aria-label={`View all artwork in category ${category}`}
+                aria-label={`View all artwork in category ${category.name}`}
               >
-                {category}
+                {category.name}
               </Link>
               {idx < artwork.categories.length - 1 && ', '}
             </React.Fragment>

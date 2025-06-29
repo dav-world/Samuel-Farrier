@@ -89,3 +89,8 @@ body {
 .info-container {
   margin-top: 20px;
 }
+
+.blue-link {
+  color: #0070f3;
+  text-decoration: underline;
+}

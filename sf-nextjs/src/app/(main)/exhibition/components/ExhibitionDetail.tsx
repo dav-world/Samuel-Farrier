@@ -38,14 +38,12 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
       <h1>{exhibition.name}</h1>
       <p>{exhibition.venue_name}, {exhibition.city}</p>
       <p>{new Date(exhibition.startDate).toLocaleDateString()} - {new Date(exhibition.endDate).toLocaleDateString()}</p>
-      <p>Curator: {exhibition.curator}</p>
-      <p>Show Type: {exhibition.show_type}</p>
-      {exhibition.url && <p>Website: <a href={exhibition.url} target="_blank" rel="noopener noreferrer">{exhibition.url}</a></p>}
+      <p>{exhibition.curator}</p>
+      {exhibition.url && <p><a className="blue-link" href={exhibition.url} target="_blank" rel="noopener noreferrer">{exhibition.url}</a></p>}
 
       {/* Images */}
       {exhibition.images?.length > 0 && (
         <div>
-          <strong>Images:</strong>
           {exhibition.images.map((image, imageIndex) => (
             <div key={image._key || `image-${imageIndex}`}>
               {image.asset && image.asset.url ? (
@@ -66,7 +64,6 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
       {/* Display Press */}
       {exhibition.press?.length > 0 && (
         <div>
-          <h2>Press</h2>
           {exhibition.press.map((block, index) => (
             <p key={index}>
               {block.children?.map((child: any, childIndex: number) => (
@@ -80,7 +77,6 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
       {/* Display Notes */}
       {exhibition.notes?.length > 0 && (
         <div>
-          <h2>Notes</h2>
           {exhibition.notes.map((block, index) => (
             <p key={index}>
               {block.children?.map((child: any, childIndex: number) => (
@@ -97,7 +93,14 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
           <h2>Related Artworks</h2>
           {exhibition.relatedArtworks.map((artwork) => (
             <p key={artwork.slug}>
-              <a href={`/artwork/${artwork.slug}`} target="_blank" rel="noopener noreferrer">{artwork.name}</a>
+              <a
+                href={`/artwork/${artwork.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="blue-link"
+              >
+                {artwork.name}
+              </a>
             </p>
           ))}
         </div>
@@ -106,7 +109,6 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
       {/* Videos */}
       {exhibition.videos?.length > 0 && (
         <div>
-          <h2>Videos</h2>
           {exhibition.videos.map((videoUrl, index) => {
             const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
             const isVimeo = videoUrl.includes('vimeo.com');

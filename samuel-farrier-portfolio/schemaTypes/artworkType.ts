@@ -199,4 +199,5 @@ export const artworkType = defineType({
         layout: 'tags', // Allows you to add multiple options as tags
       },
     }),
+  ],
 })

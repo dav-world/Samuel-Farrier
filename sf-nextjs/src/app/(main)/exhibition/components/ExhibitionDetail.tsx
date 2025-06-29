@@ -20,7 +20,12 @@ interface Exhibition {
   images: any[];
   press: PortableTextBlock[];
   notes: PortableTextBlock[];
-  relatedArtworks?: Array<{ slug: string; name: string }>;
+  relatedArtworks?: Array<{
+    slug: string;
+    name: string;
+    available?: string;
+    visibility?: string;
+  }>;
   videos?: string[];
 }
 
@@ -48,12 +53,12 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
             <div key={image._key || `image-${imageIndex}`}>
               {image.asset && image.asset.url ? (
                 <img
-                  src={image.asset.url}  // Directly use the URL from the asset object
+                  src={image.asset.url}
                   alt={image.alt || 'Artwork image'}
                   style={{ maxWidth: '500px', width: '100%' }}
                 />
               ) : (
-                <p>No image available</p>  // Optional fallback if no image is available
+                <p>No image available</p>
               )}
               {image.caption && <p>{image.caption}</p>}
             </div>
@@ -91,18 +96,24 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
       {exhibition.relatedArtworks && exhibition.relatedArtworks.length > 0 && (
         <div>
           <h2>Related Artworks</h2>
-          {exhibition.relatedArtworks.map((artwork) => (
-            <p key={artwork.slug}>
-              <a
-                href={`/artwork/${artwork.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="blue-link"
-              >
-                {artwork.name}
-              </a>
-            </p>
-          ))}
+          {exhibition.relatedArtworks
+            .filter(
+              (artwork) =>
+                (artwork.available || '').toLowerCase() === 'yes' &&
+                (artwork.visibility || '').toLowerCase() === 'public'
+            )
+            .map((artwork) => (
+              <p key={artwork.slug}>
+                <a
+                  href={`/artwork/${artwork.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="blue-link"
+                >
+                  {artwork.name}
+                </a>
+              </p>
+            ))}
         </div>
       )}
 

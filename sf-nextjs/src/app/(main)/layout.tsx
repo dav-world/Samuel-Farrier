@@ -9,7 +9,10 @@ interface SanityItem {
   name: string;
   slug: string;
 }
-interface Artwork extends SanityItem {}
+interface Artwork extends SanityItem {
+  available?: string;
+  visibility?: string;
+}
 interface Exhibition extends SanityItem {}
 interface Commercial extends SanityItem {}
 
@@ -27,13 +30,22 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
     fetchCommercials();
   }, []);
 
+  // Only fetch artworks that are available and public
   const fetchArtworks = async () => {
     try {
       const artworkResponse = await client.fetch<Artwork[]>(`
-        *[_type == "artwork"] | order(year desc, name asc) { _id, name, "slug": slug.current }
+        *[
+          _type == "artwork" &&
+          lower(available) == "yes" &&
+          lower(visibility) == "public"
+        ] | order(year desc, name asc) {
+          _id, name, "slug": slug.current, available, visibility
+        }
       `);
       setArtworks(artworkResponse);
-    } catch (error) { console.error("Failed to fetch artworks:", error); }
+    } catch (error) {
+      console.error("Failed to fetch artworks:", error);
+    }
   };
 
   const fetchExhibitions = async () => {
@@ -42,7 +54,9 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
         *[_type == "exhibition"] | order(year desc, name asc) { _id, name, "slug": slug.current }
       `);
       setExhibitions(exhibitionResponse);
-    } catch (error) { console.error("Failed to fetch exhibitions:", error); }
+    } catch (error) {
+      console.error("Failed to fetch exhibitions:", error);
+    }
   };
 
   const fetchCommercials = async () => {
@@ -51,7 +65,9 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
         *[_type == "commercial"] | order(date desc, name asc) { _id, name, "slug": slug.current }
       `);
       setCommercials(commercialResponse);
-    } catch (error) { console.error("Failed to fetch commercials:", error); }
+    } catch (error) {
+      console.error("Failed to fetch commercials:", error);
+    }
   };
 
   // Accordion click handler
@@ -88,9 +104,6 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
 
   // Animated Hamburger/X Icon (cross-browser, Safari-safe)
   function HamburgerXIcon({ open }: { open: boolean }) {
-    // Use group <g> with transform for better Safari support
-    // Center lines at (16,16), rotate as a group, and animate y positions for the lines
-    // This ensures the X is perfectly centered and animation is smooth everywhere
     return (
       <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
         <g>
@@ -162,7 +175,6 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
       <div
         className="container mx-auto flex flex-col md:flex-row p-4 min-h-screen relative"
         style={{
-          // Add top padding on mobile to prevent content being covered by header
           paddingTop: `calc(${mobileHeaderHeight}px + 1rem)`,
         }}
       >
@@ -182,7 +194,6 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
           `}
           style={{
             minWidth: '220px',
-            // On mobile, start below the header
             top: mobileHeaderHeight,
             height: `calc(100% - ${mobileHeaderHeight}px)`,
           }}

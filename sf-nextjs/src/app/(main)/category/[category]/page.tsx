@@ -10,6 +10,8 @@ interface Artwork {
   year: number;
   images: any[];
   categories: string[];
+  available?: string;
+  visibility?: string;
 }
 
 interface CategoryPageProps {
@@ -20,15 +22,22 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const { category } = params;
   const decodedCategory = decodeURIComponent(category);
 
-  // Fetch artworks for this category
+  // Fetch artworks for this category that are available and public
   const artworks: Artwork[] = await client.fetch(
-    `*[_type == "artwork" && $category in categories][]{
+    `*[
+      _type == "artwork" &&
+      $category in categories &&
+      lower(available) == "yes" &&
+      lower(visibility) == "public"
+    ][]{
       _id,
       name,
       slug,
       year,
       images,
-      categories
+      categories,
+      available,
+      visibility
     }`,
     { category: decodedCategory }
   );

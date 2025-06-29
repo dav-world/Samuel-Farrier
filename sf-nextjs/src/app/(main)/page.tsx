@@ -22,6 +22,10 @@ interface ArtworkImageWithArtwork {
   artworkName: string;
   type: 'artwork';
   createdAt: string;
+  year?: number | string;
+  dimensions?: string;
+  medium?: string;
+  date?: string;
 }
 
 interface ExhibitionImageWithExhibition {
@@ -43,6 +47,7 @@ interface ExhibitionImageWithExhibition {
   exhibitionName: string;
   type: 'exhibition';
   createdAt: string;
+  year?: number | string; // <-- add year
 }
 
 function getFixedWidthDimensions(asset: any, fixedWidth: number) {
@@ -59,6 +64,10 @@ async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | Exhi
     name,
     "slug": slug.current,
     _createdAt,
+    year,
+    dimensions,
+    medium,
+    date,
     images[]{
       _key,
       asset->{
@@ -71,10 +80,12 @@ async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | Exhi
     }
   }`;
 
+  // Add year to exhibition query
   const exhibitionQuery = `*[_type == "exhibition" && homescreen == true && defined(images) && count(images) > 0]{
     name,
     "slug": slug.current,
     _createdAt,
+    year,
     images[]{
       _key,
       asset->{
@@ -89,8 +100,8 @@ async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | Exhi
 
   try {
     const [artworks, exhibitions] = await Promise.all([
-      client.fetch<{ name: string; slug: string; images: any[]; _createdAt: string }[]>(artworkQuery),
-      client.fetch<{ name: string; slug: string; images: any[]; _createdAt: string }[]>(exhibitionQuery),
+      client.fetch<{ name: string; slug: string; images: any[]; _createdAt: string; year?: number | string; dimensions?: string; medium?: string; date?: string }[]>(artworkQuery),
+      client.fetch<{ name: string; slug: string; images: any[]; _createdAt: string; year?: number | string }[]>(exhibitionQuery),
     ]);
 
     const artworkImages: ArtworkImageWithArtwork[] = artworks.flatMap(artwork =>
@@ -102,6 +113,10 @@ async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | Exhi
           artworkName: artwork.name,
           type: 'artwork' as const,
           createdAt: artwork._createdAt,
+          year: artwork.year,
+          dimensions: artwork.dimensions,
+          medium: artwork.medium,
+          date: artwork.date,
         }))
     );
 
@@ -114,6 +129,7 @@ async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | Exhi
           exhibitionName: exhibition.name,
           type: 'exhibition' as const,
           createdAt: exhibition._createdAt,
+          year: exhibition.year, // <-- map year
         }))
     );
 
@@ -129,6 +145,7 @@ async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | Exhi
 const imageContainerStyle: React.CSSProperties = {
   maxWidth: '100%',
   display: 'flex',
+  flexDirection: 'column',
   justifyContent: 'center',
   alignItems: 'center',
   margin: '1rem 0',
@@ -140,6 +157,14 @@ const imageStyle: React.CSSProperties = {
   height: 'auto',
   objectFit: 'contain',
   display: 'block',
+};
+
+const artworkMetaOneLineStyle: React.CSSProperties = {
+  textAlign: 'center',
+  marginTop: '0.5rem',
+  fontSize: '0.97em',
+  color: '#444',
+  whiteSpace: 'pre-line',
 };
 
 export default async function AllHomescreenImagesPage() {
@@ -169,7 +194,6 @@ export default async function AllHomescreenImagesPage() {
         ) : (
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2.5rem' }}>
             {images.map((img) => {
-              // Always use the max width for sharpness, but constrain display size via CSS/props
               const { width: displayWidth, height: displayHeight } = getFixedWidthDimensions(img.asset, sanityImageDisplayWidth);
               const { width: maxWidth, height: maxHeight } = getFixedWidthDimensions(img.asset, sanityImageMaxWidth);
 
@@ -183,7 +207,7 @@ export default async function AllHomescreenImagesPage() {
               return (
                 <div
                   key={img._key}
-                  style={{ ...imageContainerStyle, width: displayWidth }}
+                  style={imageContainerStyle}
                 >
                   <Link href={href} style={{ display: 'block', width: '100%' }}>
                     <Image
@@ -198,9 +222,19 @@ export default async function AllHomescreenImagesPage() {
                       style={imageStyle}
                       loading="lazy"
                       sizes={`(max-width: ${sanityImageDisplayWidth}px) 100vw, ${sanityImageDisplayWidth}px`}
-                      // This ensures the browser uses the right size for the device
                     />
                   </Link>
+                  {img.type === 'artwork' ? (
+                    <div style={artworkMetaOneLineStyle}>
+                      {[img.artworkName, img.dimensions, img.medium, img.year]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </div>
+                  ) : (
+                    <div style={artworkMetaOneLineStyle}>
+                      {[img.exhibitionName, img.year].filter(Boolean).join(', ')}
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -47,7 +47,7 @@ export default function ArtworkDetailPage({ params }) {
             purchase_price,
             price,
             notes,
-            category,
+            categories,
             relatedExhibitions[]-> {
               _id,
               name,

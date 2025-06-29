@@ -26,7 +26,7 @@ interface Artwork {
   price: number;
   notes: PortableTextBlock[];
   relatedExhibitions?: Array<{ _id: string; name: string }>;
-  category: string;
+  categories: string[];
 }
 
 interface ArtworkListItemProps {

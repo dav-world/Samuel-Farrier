@@ -13,6 +13,11 @@ interface SanityImageBlock {
   [key: string]: any;
 }
 
+interface Category {
+  name: string;
+  slug: string;
+}
+
 interface Artwork {
   _id: string;
   name: string;
@@ -34,7 +39,7 @@ interface Artwork {
   price: number | null;
   notes: PortableTextBlock[];
   relatedExhibitions?: Array<{ _id: string; name: string; slug: string }>;
-  category: string;
+  categories: Category[]; // Now an array of objects with name and slug
 }
 
 interface ArtworkDetailProps {
@@ -97,7 +102,6 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
       {/* Description */}
       {artwork.description?.length > 0 && (
         <div>
-          <h2>Description</h2>
           {artwork.description.map((block, index) => {
             if (block._type === 'block' && Array.isArray(block.children)) {
               return (
@@ -273,7 +277,24 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
         </div>
       )}
 
-      <p>Category: {artwork.category}</p>
+      {/* Categories with slugs */}
+      {artwork.categories && artwork.categories.length > 0 && (
+        <p>
+          Categories:{' '}
+          {artwork.categories.map((category, idx) => (
+            <React.Fragment key={category.slug}>
+              <Link
+                href={`/category/${category.slug}`}
+                className="text-blue-500 hover:underline"
+                aria-label={`View all artwork in category ${category.name}`}
+              >
+                {category.name}
+              </Link>
+              {idx < artwork.categories.length - 1 && ', '}
+            </React.Fragment>
+          ))}
+        </p>
+      )}
     </div>
   );
 };

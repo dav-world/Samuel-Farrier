@@ -194,18 +194,40 @@ export const artworkType = defineType({
       name: 'categories',
       title: 'Categories',
       type: 'array',
-      of: [{ type: 'string' }],
+      of: [
+        {
+          type: 'object',
+          name: 'category',
+          title: 'Category',
+          fields: [
+            {
+              name: 'title',
+              title: 'Category Name',
+              type: 'string',
+              validation: Rule => Rule.required(),
+            },
+            {
+              name: 'slug',
+              title: 'Slug',
+              type: 'slug',
+              options: {
+                source: 'title',
+                maxLength: 50,
+                slugify: (input: string) =>
+                  input
+                    .toLowerCase()
+                    .replace(/\s+/g, '-')
+                    .replace(/[^a-z0-9\-]/g, '')
+                    .slice(0, 50),
+              },
+              validation: Rule => Rule.required(),
+            },
+          ],
+        },
+      ],
       options: {
-        list: [
-          { title: 'Painting', value: 'painting' },
-          { title: 'Drawing', value: 'drawing' },
-          { title: 'Sculpture', value: 'sculpture' },
-          { title: 'Performance', value: 'performance' },
-          { title: 'Installatiosanity startsanity startsanity startn', value: 'installation' },
-          { title: 'Book', value: 'book' },
-          { title: 'Other', value: 'other' },
-        ],
-        layout: 'tags', // Allows you to add multiple options as tags
+        // No fixed list, allow any category
+        layout: 'tags',
       },
     }),
   ],

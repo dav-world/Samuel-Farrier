@@ -18,6 +18,7 @@ interface CategoryPageProps {
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { category } = params;
+  const decodedCategory = decodeURIComponent(category);
 
   // Fetch artworks for this category
   const artworks: Artwork[] = await client.fetch(
@@ -29,35 +30,52 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       images,
       categories
     }`,
-    { category }
+    { category: decodedCategory }
   );
 
   return (
     <div>
-      <h1>Category: {category}</h1>
+      <h1>Category: {decodedCategory}</h1>
+
       {artworks.length === 0 ? (
         <p>No artworks found in this category.</p>
       ) : (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
-          {artworks.map((artwork) => (
-            <div key={artwork._id} style={{ width: 300 }}>
-              <Link href={`/artwork/${artwork.slug.current}`}>
-                <a>
-                  {artwork.images && artwork.images[0] && (
+          {artworks.map((artwork) => {
+            // Defensive check for image asset
+            const firstImage = Array.isArray(artwork.images) && artwork.images.length > 0 ? artwork.images[0] : null;
+            const hasAsset = firstImage && firstImage.asset;
+
+            return (
+              <div key={artwork._id} style={{ width: 300 }}>
+                <Link href={`/artwork/${artwork.slug.current}`} className="block">
+                  {hasAsset ? (
                     <Image
-                      src={urlFor(artwork.images[0].asset).width(400).url()}
+                      src={urlFor(firstImage.asset).width(400).url()}
                       alt={artwork.name}
                       width={400}
                       height={300}
                       style={{ objectFit: 'cover', width: '100%', height: 'auto' }}
                     />
+                  ) : (
+                    <div style={{
+                      width: 400,
+                      height: 300,
+                      background: '#eee',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#888'
+                    }}>
+                      No image
+                    </div>
                   )}
                   <h2>{artwork.name}</h2>
                   <p>{artwork.year}</p>
-                </a>
-              </Link>
-            </div>
-          ))}
+                </Link>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

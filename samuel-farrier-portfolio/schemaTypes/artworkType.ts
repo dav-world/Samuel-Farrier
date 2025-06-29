@@ -207,9 +207,9 @@ export const artworkType = defineType({
               validation: Rule => Rule.required(),
             },
             {
-              name: 'slug',
-              title: 'Slug',
-              type: 'slug',
+              name: 'value',
+              title: 'Value',
+              type: 'value',
               options: {
                 source: 'title',
                 maxLength: 50,

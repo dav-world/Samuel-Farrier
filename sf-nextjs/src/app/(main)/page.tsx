@@ -162,9 +162,10 @@ const imageStyle: React.CSSProperties = {
 const artworkMetaOneLineStyle: React.CSSProperties = {
   textAlign: 'center',
   marginTop: '0.5rem',
-  fontSize: '0.97em',
+  fontSize: '0.75em',
   color: '#444',
   whiteSpace: 'pre-line',
+  fontStyle: 'italic',
 };
 
 export default async function AllHomescreenImagesPage() {

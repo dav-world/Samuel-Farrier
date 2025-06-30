@@ -36,8 +36,14 @@ export default function ExhibitionDetailPage({ params }: ExhibitionDetailPagePro
             show_type,
             curator,
             images[]{
-              asset->{url},
+              asset->{
+                _id,
+                _type,
+                url,
+                metadata
+              },
               caption,
+              alt
             },
             press[]{
               ...,
@@ -55,7 +61,9 @@ export default function ExhibitionDetailPage({ params }: ExhibitionDetailPagePro
             "relatedArtworks": relatedArtworks[]->{
               _id,
               name,
-              "slug": slug.current // Fetch related slugs if you link to them
+              "slug": slug.current,
+              available,
+              visibility
             }
           }`,
           { slug: params.slug }

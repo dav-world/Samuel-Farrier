@@ -42,6 +42,13 @@ const imageStyle: React.CSSProperties = {
   display: 'block',
 };
 
+interface RelatedArtwork {
+  slug: { current: string } | string;
+  name: string;
+  available?: string;
+  visibility?: string;
+}
+
 interface Exhibition {
   _id: string;
   name: string;
@@ -58,12 +65,7 @@ interface Exhibition {
   images: any[];
   press: PortableTextBlock[];
   notes: PortableTextBlock[];
-  relatedArtworks?: Array<{
-    slug: string;
-    name: string;
-    available?: string;
-    visibility?: string;
-  }>;
+  relatedArtworks?: RelatedArtwork[];
   videos?: string[];
 }
 
@@ -92,29 +94,6 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
   return (
     <div style={outerContainerStyle}>
       <div style={contentContainerStyle}>
-        <h1>{exhibition.name}</h1>
-        <p>
-          {exhibition.venue_name}
-          {exhibition.city ? `, ${exhibition.city}` : ''}
-        </p>
-        <p>
-          {new Date(exhibition.startDate).toLocaleDateString()} -{' '}
-          {new Date(exhibition.endDate).toLocaleDateString()}
-        </p>
-        <p>{exhibition.curator}</p>
-        {exhibition.url && (
-          <p>
-            <a
-              className="blue-link"
-              href={exhibition.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {exhibition.url}
-            </a>
-          </p>
-        )}
-
         {/* Images */}
         {Array.isArray(exhibition.images) && exhibition.images.length > 0 && (
           <div>
@@ -161,9 +140,29 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
           </div>
         )}
 
+        <h1>{exhibition.name}</h1>
+        <p>
+          {exhibition.venue_name}
+          {exhibition.city ? `, ${exhibition.city}` : ''}
+        </p>
+        <p>{exhibition.curator}</p>
+        {exhibition.url && (
+          <p>
+            <a
+              className="blue-link"
+              href={exhibition.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {exhibition.url}
+            </a>
+          </p>
+        )}
+
         {/* Display Press */}
-        {Array.isArray(exhibition.press) && exhibition.press.length > 0 && (
+        {/* {Array.isArray(exhibition.press) && exhibition.press.length > 0 && (
           <div>
+            <h2>Press</h2>
             {exhibition.press.map((block, index) => (
               <p key={index}>
                 {Array.isArray(block.children) &&
@@ -173,11 +172,12 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
               </p>
             ))}
           </div>
-        )}
+        )} */}
 
         {/* Display Notes */}
-        {Array.isArray(exhibition.notes) && exhibition.notes.length > 0 && (
+        {/* {Array.isArray(exhibition.notes) && exhibition.notes.length > 0 && (
           <div>
+            <h2>Notes</h2>
             {exhibition.notes.map((block, index) => (
               <p key={index}>
                 {Array.isArray(block.children) &&
@@ -187,7 +187,7 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
               </p>
             ))}
           </div>
-        )}
+        )} */}
 
         {/* Related Artworks */}
         {Array.isArray(exhibition.relatedArtworks) && exhibition.relatedArtworks.length > 0 && (
@@ -200,9 +200,9 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
                   (artwork.visibility || '').toLowerCase() === 'public'
               )
               .map((artwork) => (
-                <p key={artwork.slug}>
+                <p key={typeof artwork.slug === 'string' ? artwork.slug : artwork.slug?.current}>
                   <Link
-                    href={`/artwork/${artwork.slug}`}
+                    href={`/artwork/${typeof artwork.slug === 'string' ? artwork.slug : artwork.slug?.current}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="blue-link"
@@ -217,6 +217,7 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
         {/* Videos */}
         {Array.isArray(exhibition.videos) && exhibition.videos.length > 0 && (
           <div>
+            <h2>Videos</h2>
             {exhibition.videos.map((videoUrl, index) => {
               const isYouTube =
                 videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');

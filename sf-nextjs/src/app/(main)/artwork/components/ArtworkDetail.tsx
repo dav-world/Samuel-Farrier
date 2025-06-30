@@ -4,52 +4,7 @@ import { PortableTextBlock } from '@sanity/types';
 import Link from 'next/link';
 import Image from 'next/image';
 
-// Uniform width for images and content containers
 const UNIFORM_WIDTH = 600;
-
-const outerContainerStyle: React.CSSProperties = {
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-};
-
-const contentContainerStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: `${UNIFORM_WIDTH}px`,
-  margin: '0 auto',
-  textAlign: 'left',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-start',
-};
-
-const imageContainerStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: `${UNIFORM_WIDTH}px`,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  margin: '1.5rem 0',
-  overflow: 'hidden',
-};
-
-const imageStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: `${UNIFORM_WIDTH}px`,
-  height: 'auto',
-  objectFit: 'contain',
-  display: 'block',
-};
-
-const blockImageStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: `${UNIFORM_WIDTH}px`,
-  height: 'auto',
-  objectFit: 'contain',
-  display: 'block',
-  margin: '1rem 0',
-};
 
 interface SanityImageBlock {
   _type: 'image';
@@ -87,7 +42,6 @@ interface ArtworkDetailProps {
   artwork: Artwork;
 }
 
-// Helper to get fixed width and aspect-ratio-correct height
 function getFixedWidthDimensions(asset: any, fixedWidth: number) {
   const origWidth = asset?.metadata?.dimensions?.width || 800;
   const origHeight = asset?.metadata?.dimensions?.height || 600;
@@ -96,19 +50,89 @@ function getFixedWidthDimensions(asset: any, fixedWidth: number) {
   return { width, height };
 }
 
-// Type guard for Sanity image block
 function isSanityImageBlock(block: any): block is SanityImageBlock {
   return block && block._type === 'image' && !!block.asset;
 }
 
 const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
   if (!artwork) {
-    return <div style={outerContainerStyle}><div style={contentContainerStyle}>Artwork not found</div></div>;
+    return (
+      <div className="centered-outer">
+        <div className="centered-content">Artwork not found</div>
+      </div>
+    );
   }
 
   return (
-    <div style={outerContainerStyle}>
-      <div style={contentContainerStyle}>
+    <div className="centered-outer">
+      <div className="centered-content">
+        {/* Images */}
+        {artwork.images && artwork.images.length > 0 && (
+          <div>
+            {artwork.images.map(image => {
+              if (isSanityImageBlock(image)) {
+                const { width, height } = getFixedWidthDimensions(image.asset, UNIFORM_WIDTH);
+                return (
+                  <div key={image._key} className="centered-image-container">
+                    <Image
+                      src={urlFor(image.asset).width(UNIFORM_WIDTH * 2).auto('format').quality(80).url()}
+                      alt={image.alt || ''}
+                      width={width * 2}
+                      height={height * 2}
+                      className="centered-image"
+                      sizes={`(max-width: ${UNIFORM_WIDTH}px) 100vw, ${UNIFORM_WIDTH}px`}
+                    />
+                    {image.caption && <p style={{ textAlign: 'center', marginTop: '0.5rem' }}>{image.caption}</p>}
+                  </div>
+                );
+              }
+              return null;
+            })}
+          </div>
+        )}
+
+        {/* Videos */}
+        {artwork.videos && Array.isArray(artwork.videos) && artwork.videos.length > 0 && (
+          <div>
+            <h2>Videos</h2>
+            {artwork.videos.map((videoUrl, index) => {
+              const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+              const isVimeo = videoUrl.includes('vimeo.com');
+
+              return (
+                <div key={`video-${index}`} className="centered-image-container">
+                  {isYouTube ? (
+                    <iframe
+                      width={UNIFORM_WIDTH}
+                      height={Math.round(UNIFORM_WIDTH * 9 / 16)}
+                      src={videoUrl.replace('watch?v=', 'embed/')}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="centered-video"
+                    ></iframe>
+                  ) : isVimeo ? (
+                    <iframe
+                      src={videoUrl.replace('vimeo.com', 'player.vimeo.com/video')}
+                      width={UNIFORM_WIDTH}
+                      height={Math.round(UNIFORM_WIDTH * 9 / 16)}
+                      frameBorder="0"
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                      className="centered-video"
+                    ></iframe>
+                  ) : (
+                    <a href={videoUrl} target="_blank" rel="noopener noreferrer">
+                      {videoUrl}
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <h1>{artwork.name}</h1>
         <p>{artwork.year}</p>
         {artwork.date && <p>{new Date(artwork.date).toLocaleDateString()}</p>}
@@ -151,77 +175,9 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
           </div>
         )}
 
-        {/* Images */}
-        {artwork.images && artwork.images.length > 0 && (
-          <div>
-            {artwork.images.map(image => {
-              if (isSanityImageBlock(image)) {
-                const { width, height } = getFixedWidthDimensions(image.asset, UNIFORM_WIDTH);
-                return (
-                  <div key={image._key} style={imageContainerStyle}>
-                    <Image
-                      src={urlFor(image.asset).width(UNIFORM_WIDTH * 2).auto('format').quality(80).url()}
-                      alt={image.alt || ''}
-                      width={width * 2}
-                      height={height * 2}
-                      style={imageStyle}
-                      sizes={`(max-width: ${UNIFORM_WIDTH}px) 100vw, ${UNIFORM_WIDTH}px`}
-                    />
-                    {image.caption && <p style={{ textAlign: 'center', marginTop: '0.5rem' }}>{image.caption}</p>}
-                  </div>
-                );
-              }
-              return null;
-            })}
-          </div>
-        )}
-
-        {/* Videos */}
-        {artwork.videos && Array.isArray(artwork.videos) && artwork.videos.length > 0 && (
-          <div>
-            <h2>Videos</h2>
-            {artwork.videos.map((videoUrl, index) => {
-              const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
-              const isVimeo = videoUrl.includes('vimeo.com');
-
-              return (
-                <div key={`video-${index}`} style={{ margin: '1rem 0' }}>
-                  {isYouTube ? (
-                    <iframe
-                      width={UNIFORM_WIDTH}
-                      height={Math.round(UNIFORM_WIDTH * 9 / 16)}
-                      src={videoUrl.replace('watch?v=', 'embed/')}
-                      title="YouTube video player"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      style={imageContainerStyle}
-                    ></iframe>
-                  ) : isVimeo ? (
-                    <iframe
-                      src={videoUrl.replace('vimeo.com', 'player.vimeo.com/video')}
-                      width={UNIFORM_WIDTH}
-                      height={Math.round(UNIFORM_WIDTH * 9 / 16)}
-                      frameBorder="0"
-                      allow="autoplay; fullscreen; picture-in-picture"
-                      allowFullScreen
-                      style={imageContainerStyle}
-                    ></iframe>
-                  ) : (
-                    <a href={videoUrl} target="_blank" rel="noopener noreferrer">
-                      {videoUrl}
-                    </a>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
         {/* Press */}
         {artwork.press?.length > 0 && (
           <div>
-            <h2>Press</h2>
             {artwork.press.map((block, index) => {
               if (block._type === 'block' && Array.isArray(block.children)) {
                 return (
@@ -252,13 +208,13 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
               } else if (isSanityImageBlock(block)) {
                 const { width, height } = getFixedWidthDimensions(block.asset, UNIFORM_WIDTH);
                 return (
-                  <div key={index} style={imageContainerStyle}>
+                  <div key={index} className="centered-image-container">
                     <Image
                       src={urlFor(block.asset).width(UNIFORM_WIDTH * 2).auto('format').quality(80).url()}
                       alt="Press image"
                       width={width * 2}
                       height={height * 2}
-                      style={blockImageStyle}
+                      className="centered-block-image"
                       sizes={`(max-width: ${UNIFORM_WIDTH}px) 100vw, ${UNIFORM_WIDTH}px`}
                     />
                   </div>
@@ -296,7 +252,6 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
         {/* Categories as strings */}
         {artwork.categories && artwork.categories.length > 0 && (
           <p>
-            {' '}
             {artwork.categories.map((category, idx) => (
               <React.Fragment key={category || idx}>
                 <Link

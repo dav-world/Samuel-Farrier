@@ -1,27 +1,36 @@
+/* eslint-disable @next/next/no-img-element */
 import React from 'react';
 import { PortableTextBlock } from '@sanity/types';
 import Link from 'next/link';
 import Image from 'next/image';
 import { urlFor } from '../../../lib/sanityImage';
 
-// Uniform width for images and content containers
 const UNIFORM_WIDTH = 600;
 
 const outerContainerStyle: React.CSSProperties = {
   width: '100%',
+  minHeight: '100vh',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
+  paddingLeft: '1rem',
+  paddingRight: '1rem',
+  boxSizing: 'border-box',
+  background: 'white',
 };
 
 const contentContainerStyle: React.CSSProperties = {
   width: '100%',
   maxWidth: `${UNIFORM_WIDTH}px`,
-  margin: '0 auto',
+  marginLeft: 'auto',
+  marginRight: 'auto',
   textAlign: 'left',
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'flex-start',
+  alignItems: 'stretch',
+  boxSizing: 'border-box',
+  wordBreak: 'break-word',
+  overflowWrap: 'anywhere',
 };
 
 const imageContainerStyle: React.CSSProperties = {
@@ -32,6 +41,7 @@ const imageContainerStyle: React.CSSProperties = {
   alignItems: 'center',
   margin: '1.5rem 0',
   overflow: 'hidden',
+  boxSizing: 'border-box',
 };
 
 const imageStyle: React.CSSProperties = {
@@ -40,6 +50,7 @@ const imageStyle: React.CSSProperties = {
   height: 'auto',
   objectFit: 'contain',
   display: 'block',
+  boxSizing: 'border-box',
 };
 
 interface RelatedArtwork {
@@ -73,7 +84,6 @@ interface ExhibitionDetailProps {
   exhibition: Exhibition;
 }
 
-// Helper to get fixed width and aspect-ratio-correct height
 function getFixedWidthDimensions(asset: any, fixedWidth: number) {
   const origWidth = asset?.metadata?.dimensions?.width || 800;
   const origHeight = asset?.metadata?.dimensions?.height || 600;
@@ -111,7 +121,7 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
                       sizes={`(max-width: ${UNIFORM_WIDTH}px) 100vw, ${UNIFORM_WIDTH}px`}
                     />
                     {image.caption && (
-                      <p style={{ textAlign: 'center', marginTop: '0.5rem' }}>{image.caption}</p>
+                      <p style={{ textAlign: 'center', marginTop: '0.5rem', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{image.caption}</p>
                     )}
                   </div>
                 );
@@ -125,7 +135,7 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
                       style={imageStyle}
                     />
                     {image.caption && (
-                      <p style={{ textAlign: 'center', marginTop: '0.5rem' }}>{image.caption}</p>
+                      <p style={{ textAlign: 'center', marginTop: '0.5rem', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{image.caption}</p>
                     )}
                   </div>
                 );
@@ -153,6 +163,7 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
               href={exhibition.url}
               target="_blank"
               rel="noopener noreferrer"
+              style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
             >
               {exhibition.url}
             </a>
@@ -160,39 +171,43 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
         )}
 
         {/* Display Press */}
-        {/* {Array.isArray(exhibition.press) && exhibition.press.length > 0 && (
-          <div>
-            <h2>Press</h2>
+        {Array.isArray(exhibition.press) && exhibition.press.length > 0 && (
+          <section style={{ width: '100%' }}>
+            <h2 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Press</h2>
             {exhibition.press.map((block, index) => (
-              <p key={index}>
+              <p key={index} style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', marginBottom: '0.75rem' }}>
                 {Array.isArray(block.children) &&
                   block.children.map((child: any, childIndex: number) => (
-                    <span key={child._key || childIndex}>{child.text}</span>
+                    <span key={child._key || childIndex}>
+                      {child.text}
+                    </span>
                   ))}
               </p>
             ))}
-          </div>
-        )} */}
+          </section>
+        )}
 
         {/* Display Notes */}
-        {/* {Array.isArray(exhibition.notes) && exhibition.notes.length > 0 && (
-          <div>
-            <h2>Notes</h2>
+        {Array.isArray(exhibition.notes) && exhibition.notes.length > 0 && (
+          <section style={{ width: '100%' }}>
+            <h2 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Notes</h2>
             {exhibition.notes.map((block, index) => (
-              <p key={index}>
+              <p key={index} style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', marginBottom: '0.75rem' }}>
                 {Array.isArray(block.children) &&
                   block.children.map((child: any, childIndex: number) => (
-                    <span key={child._key || childIndex}>{child.text}</span>
+                    <span key={child._key || childIndex}>
+                      {child.text}
+                    </span>
                   ))}
               </p>
             ))}
-          </div>
-        )} */}
+          </section>
+        )}
 
         {/* Related Artworks */}
         {Array.isArray(exhibition.relatedArtworks) && exhibition.relatedArtworks.length > 0 && (
-          <div>
-            <h2>Related Artworks</h2>
+          <section style={{ width: '100%' }}>
+            <h2 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Related Artworks</h2>
             {exhibition.relatedArtworks
               .filter(
                 (artwork) =>
@@ -206,18 +221,19 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="blue-link"
+                    style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
                   >
                     {artwork.name}
                   </Link>
                 </p>
               ))}
-          </div>
+          </section>
         )}
 
         {/* Videos */}
         {Array.isArray(exhibition.videos) && exhibition.videos.length > 0 && (
-          <div>
-            <h2>Videos</h2>
+          <section style={{ width: '100%' }}>
+            <h2 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Videos</h2>
             {exhibition.videos.map((videoUrl, index) => {
               const isYouTube =
                 videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
@@ -247,14 +263,14 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
                       style={imageStyle}
                     ></iframe>
                   ) : (
-                    <a href={videoUrl} target="_blank" rel="noopener noreferrer">
+                    <a href={videoUrl} target="_blank" rel="noopener noreferrer" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                       {videoUrl}
                     </a>
                   )}
                 </div>
               );
             })}
-          </div>
+          </section>
         )}
       </div>
     </div>

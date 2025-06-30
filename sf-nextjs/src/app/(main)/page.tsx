@@ -5,54 +5,6 @@ import { urlFor } from '../lib/sanityImage';
 
 const UNIFORM_WIDTH = 600;
 
-const outerCenteredStyle: React.CSSProperties = {
-  width: '100%',
-  minHeight: '100vh',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'flex-start',
-  textAlign: 'center',
-  boxSizing: 'border-box',
-};
-
-const containerStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: `${UNIFORM_WIDTH}px`,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  boxSizing: 'border-box',
-};
-
-const imageContainerStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: `${UNIFORM_WIDTH}px`,
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  alignItems: 'center',
-  margin: '1rem 0',
-  overflow: 'hidden',
-};
-
-const imageStyle: React.CSSProperties = {
-  width: '100%',
-  maxWidth: `${UNIFORM_WIDTH}px`,
-  height: 'auto',
-  objectFit: 'contain',
-  display: 'block',
-};
-
-const artworkMetaOneLineStyle: React.CSSProperties = {
-  textAlign: 'center',
-  marginTop: '0.5rem',
-  fontSize: '0.75em',
-  color: '#444',
-  whiteSpace: 'pre-line',
-  fontStyle: 'italic',
-};
-
 interface ArtworkImageWithArtwork {
   _key: string;
   asset: {
@@ -211,8 +163,8 @@ export default async function AllHomescreenImagesPage() {
   const sanityImageMaxWidth = sanityImageDisplayWidth * 2;
 
   return (
-    <div style={outerCenteredStyle}>
-      <div style={containerStyle}>
+    <div className="centered-outer">
+      <div className="centered-content">
         {images.length === 0 ? (
           <div style={{ width: '100%', textAlign: 'center', color: '#718096' }}>
             <p>No homescreen images found.</p>
@@ -233,7 +185,7 @@ export default async function AllHomescreenImagesPage() {
               return (
                 <div
                   key={img._key}
-                  style={imageContainerStyle}
+                  className="centered-image-container"
                 >
                   <Link href={href} style={{ display: 'block', width: '100%' }}>
                     <Image
@@ -245,19 +197,33 @@ export default async function AllHomescreenImagesPage() {
                       alt={img.alt || ''}
                       width={maxWidth}
                       height={maxHeight}
-                      style={imageStyle}
+                      className="centered-image"
                       loading="lazy"
                       sizes={`(max-width: ${sanityImageDisplayWidth}px) 100vw, ${sanityImageDisplayWidth}px`}
                     />
                   </Link>
                   {img.type === 'artwork' ? (
-                    <div style={artworkMetaOneLineStyle}>
+                    <div style={{
+                      textAlign: 'center',
+                      marginTop: '0.5rem',
+                      fontSize: '0.75em',
+                      color: '#444',
+                      whiteSpace: 'pre-line',
+                      fontStyle: 'italic',
+                    }}>
                       {[img.artworkName, img.dimensions, img.medium, img.year]
                         .filter(Boolean)
                         .join(', ')}
                     </div>
                   ) : (
-                    <div style={artworkMetaOneLineStyle}>
+                    <div style={{
+                      textAlign: 'center',
+                      marginTop: '0.5rem',
+                      fontSize: '0.75em',
+                      color: '#444',
+                      whiteSpace: 'pre-line',
+                      fontStyle: 'italic',
+                    }}>
                       {[img.exhibitionName, img.year].filter(Boolean).join(', ')}
                     </div>
                   )}

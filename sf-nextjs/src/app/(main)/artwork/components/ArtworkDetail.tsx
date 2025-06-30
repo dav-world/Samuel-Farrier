@@ -296,7 +296,7 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
         {/* Categories as strings */}
         {artwork.categories && artwork.categories.length > 0 && (
           <p>
-            Categories:{' '}
+            {' '}
             {artwork.categories.map((category, idx) => (
               <React.Fragment key={category || idx}>
                 <Link

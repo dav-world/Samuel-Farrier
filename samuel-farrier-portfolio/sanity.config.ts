@@ -7,7 +7,7 @@ export default defineConfig({
   name: 'default',
   title: 'Samuel Farrier Portfolio',
 
-  projectId: '6ti8vhaw',
+  projectId: 'txu6l05g',
   dataset: 'production',
 
   plugins: [structureTool(), visionTool()],

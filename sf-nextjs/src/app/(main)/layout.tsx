@@ -17,6 +17,22 @@ interface Artwork extends SanityItem {
 }
 interface Exhibition extends SanityItem {}
 
+// Move GROQ queries outside the component to avoid dependency warning
+const artworkQuery = `
+  *[
+    _type == "artwork" &&
+    lower(available) == "yes" &&
+    lower(visibility) == "public"
+  ] {
+    _id, name, "slug": slug.current, available, visibility, importance, _createdAt
+  }
+`;
+const exhibitionQuery = `
+  *[_type == "exhibition"] {
+    _id, name, "slug": slug.current, importance, _createdAt
+  }
+`;
+
 function TwoLineHamburgerXIcon({ open }: { open: boolean }) {
   // Uses two lines that animate into an X
   return (
@@ -52,67 +68,85 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
   const [commercials, setCommercials] = useState<SanityItem[]>([]);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  // Fetch data on mount
+  // Fetch data on mount and set up real-time listeners
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchArtworks = async () => {
+      try {
+        const artworkResponse = await client.fetch<Artwork[]>(artworkQuery);
+        if (!isMounted) return;
+        const withImportance = artworkResponse.filter(a => typeof a.importance === 'number');
+        const withoutImportance = artworkResponse.filter(a => typeof a.importance !== 'number');
+        withImportance.sort((a, b) => (a.importance! - b.importance!));
+        withoutImportance.sort((a, b) => new Date(a._createdAt).getTime() - new Date(b._createdAt).getTime());
+        setArtworks([...withImportance, ...withoutImportance]);
+      } catch (error) {
+        console.error("Failed to fetch artworks:", error);
+      }
+    };
+
+    const fetchExhibitions = async () => {
+      try {
+        const exhibitionResponse = await client.fetch<Exhibition[]>(exhibitionQuery);
+        if (!isMounted) return;
+        const withImportance = exhibitionResponse.filter(e => typeof e.importance === 'number');
+        const withoutImportance = exhibitionResponse.filter(e => typeof e.importance !== 'number');
+        withImportance.sort((a, b) => (a.importance! - b.importance!));
+        withoutImportance.sort((a, b) => new Date(a._createdAt).getTime() - new Date(b._createdAt).getTime());
+        setExhibitions([...withImportance, ...withoutImportance]);
+      } catch (error) {
+        console.error("Failed to fetch exhibitions:", error);
+      }
+    };
+
+    const fetchCommercials = async () => {
+      try {
+        const commercialResponse = await client.fetch<SanityItem[]>(`
+          *[_type == "commercial"] | order(date desc, name asc) { _id, name, "slug": slug.current }
+        `);
+        if (!isMounted) return;
+        setCommercials(commercialResponse);
+      } catch (error) {
+        console.error("Failed to fetch commercials:", error);
+      }
+    };
+
     fetchArtworks();
     fetchExhibitions();
     fetchCommercials();
-  }, []);
 
-  // Only fetch artworks that are available and public, and get importance/_createdAt
-  const fetchArtworks = async () => {
-    try {
-      const artworkResponse = await client.fetch<Artwork[]>(`
-        *[
-          _type == "artwork" &&
-          lower(available) == "yes" &&
-          lower(visibility) == "public"
-        ] {
-          _id, name, "slug": slug.current, available, visibility, importance, _createdAt
-        }
-      `);
+    // Listen for real-time updates to artworks and exhibitions
+    // Add a runtime check for client.listen to avoid runtime errors
+    let artworkSubscription: { unsubscribe: () => void } | null = null;
+    let exhibitionSubscription: { unsubscribe: () => void } | null = null;
 
-      // Sort: importance ascending (1 is most important), then by _createdAt (oldest first)
-      const withImportance = artworkResponse.filter(a => typeof a.importance === 'number');
-      const withoutImportance = artworkResponse.filter(a => typeof a.importance !== 'number');
-      withImportance.sort((a, b) => (a.importance! - b.importance!));
-      withoutImportance.sort((a, b) => new Date(a._createdAt).getTime() - new Date(b._createdAt).getTime());
-      setArtworks([...withImportance, ...withoutImportance]);
-    } catch (error) {
-      console.error("Failed to fetch artworks:", error);
+    if (typeof client.listen === "function") {
+      artworkSubscription = client
+        .listen(artworkQuery, {}, { includeResult: true })
+        .subscribe(event => {
+          if (event.type === "mutation" && isMounted) {
+            fetchArtworks();
+          }
+        });
+
+      exhibitionSubscription = client
+        .listen(exhibitionQuery, {}, { includeResult: true })
+        .subscribe(event => {
+          if (event.type === "mutation" && isMounted) {
+            fetchExhibitions();
+          }
+        });
+    } else {
+      console.warn("Sanity client.listen is not available. Real-time updates are disabled.");
     }
-  };
 
-  // Fetch exhibitions with importance/_createdAt
-  const fetchExhibitions = async () => {
-    try {
-      const exhibitionResponse = await client.fetch<Exhibition[]>(`
-        *[_type == "exhibition"] {
-          _id, name, "slug": slug.current, importance, _createdAt
-        }
-      `);
-
-      // Sort: importance ascending (1 is most important), then by _createdAt (oldest first)
-      const withImportance = exhibitionResponse.filter(e => typeof e.importance === 'number');
-      const withoutImportance = exhibitionResponse.filter(e => typeof e.importance !== 'number');
-      withImportance.sort((a, b) => (a.importance! - b.importance!));
-      withoutImportance.sort((a, b) => new Date(a._createdAt).getTime() - new Date(b._createdAt).getTime());
-      setExhibitions([...withImportance, ...withoutImportance]);
-    } catch (error) {
-      console.error("Failed to fetch exhibitions:", error);
-    }
-  };
-
-  const fetchCommercials = async () => {
-    try {
-      const commercialResponse = await client.fetch<SanityItem[]>(`
-        *[_type == "commercial"] | order(date desc, name asc) { _id, name, "slug": slug.current }
-      `);
-      setCommercials(commercialResponse);
-    } catch (error) {
-      console.error("Failed to fetch commercials:", error);
-    }
-  };
+    return () => {
+      isMounted = false;
+      artworkSubscription?.unsubscribe();
+      exhibitionSubscription?.unsubscribe();
+    };
+  }, []); // No missing dependencies, queries are stable
 
   // Accordion click handler
   const handleSectionClick = (section: string) => {
@@ -120,9 +154,6 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
       setExpandedSection(null);
     } else {
       setExpandedSection(section);
-      if (section === "artwork" && artworks.length === 0) fetchArtworks();
-      if (section === "exhibition" && exhibitions.length === 0) fetchExhibitions();
-      if (section === "commercial" && commercials.length === 0) fetchCommercials();
     }
   };
 

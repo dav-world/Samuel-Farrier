@@ -13,67 +13,77 @@ interface ArtworkDetailPageProps {
   };
 }
 
+const artworkQuery = `
+  *[_type == "artwork" && slug.current == $slug][0]{
+    _id,
+    name,
+    year,
+    date,
+    dimensions,
+    medium,
+    description,
+    images,
+    videos,
+    press,
+    visibility,
+    exhibited,
+    exhibitionLink,
+    available,
+    buyer,
+    date_purchased,
+    purchase_price,
+    price,
+    notes,
+    categories,
+    relatedExhibitions[]-> {
+      _id,
+      name,
+      "slug": slug.current
+    },
+  }
+`;
+
 export default function ArtworkDetailPage({ params }) {
-  const { slug } = params; // Destructure the slug from params
-  
+  const { slug } = params;
   const [artwork, setArtwork] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
+
+    // Initial fetch
     const fetchArtwork = async () => {
-      if (!slug) return; // Ensure we have the slug before making the request
+      if (!slug) return;
+      setLoading(true);
+      setError(null);
 
-      console.log('Fetching artwork for slug:', slug);  // Log the slug to ensure it's correct
       try {
-        const data = await client.fetch(
-          `*[_type == "artwork" && slug.current == $slug][0]{
-            _id,
-            name,
-            year,
-            date,
-            dimensions,
-            medium,
-            description,
-            images,
-            videos,
-            press,
-            visibility,
-            exhibited,
-            exhibitionLink,
-            available,
-            buyer,
-            date_purchased,
-            purchase_price,
-            price,
-            notes,
-            categories,
-            relatedExhibitions[]-> {
-              _id,
-              name,
-              "slug": slug.current // Fetch related slugs if you link to them
-            },
-          }`,
-          { slug: params.slug }
-        );
-
-        console.log('Fetched Artwork Data:', data);  // Log the fetched data for debugging
-
-        if (!data) {
-          console.warn('No artwork found with ID:', id);  // Warn if no data is returned
-        }
-
-        setArtwork(data);
+        const data = await client.fetch(artworkQuery, { slug });
+        if (isMounted) setArtwork(data);
       } catch (err) {
-        console.error("Failed to fetch artwork details:", err);
-        setError("Failed to fetch artwork");
+        if (isMounted) setError("Failed to fetch artwork");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
-    fetchArtwork();  // Call the function when `id` is available
-  }, [params.slug]); // Watch for changes in `id`
+    fetchArtwork();
+
+    // Listen for real-time updates
+    const subscription = client
+      .listen(artworkQuery, { slug }, { includeResult: true })
+      .subscribe(update => {
+        if (update.result && isMounted) {
+          setArtwork(update.result);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [slug]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;

@@ -17,6 +17,34 @@ interface Artwork extends SanityItem {
 }
 interface Exhibition extends SanityItem {}
 
+function TwoLineHamburgerXIcon({ open }: { open: boolean }) {
+  // Uses two lines that animate into an X
+  return (
+    <span className="relative w-8 h-8 flex items-center justify-center">
+      <span
+        className={`
+          absolute left-1 right-1 h-0.5 bg-black transition-all duration-300
+          ${open
+            ? 'top-1/2 rotate-45'
+            : 'top-[10px] rotate-0'
+          }
+        `}
+        style={{ transitionProperty: 'top, transform, background' }}
+      />
+      <span
+        className={`
+          absolute left-1 right-1 h-0.5 bg-black transition-all duration-300
+          ${open
+            ? 'top-1/2 -rotate-45'
+            : 'top-[22px] rotate-0'
+          }
+        `}
+        style={{ transitionProperty: 'top, transform, background' }}
+      />
+    </span>
+  );
+}
+
 export default function MainAppLayout({ children }: { children: ReactNode }) {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
@@ -118,63 +146,23 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
   // Padding for links and headers (matches px-4 py-3 from header)
   const linkPaddingClasses = "px-4 py-3";
 
-  // Animated Hamburger/X Icon (cross-browser, Safari-safe)
-  function HamburgerXIcon({ open }: { open: boolean }) {
-    return (
-      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
-        <g>
-          <rect
-            x="6"
-            y={open ? 15.5 : 10}
-            width="20"
-            height="3"
-            rx="1.5"
-            fill="currentColor"
-            style={{
-              transition: "y 0.3s cubic-bezier(.4,2,.6,1), transform 0.3s cubic-bezier(.4,2,.6,1)",
-              transformOrigin: "16px 17px",
-              transform: open
-                ? "rotate(45deg)"
-                : "rotate(0deg)",
-            }}
-          />
-          <rect
-            x="6"
-            y={open ? 15.5 : 19}
-            width="20"
-            height="3"
-            rx="1.5"
-            fill="currentColor"
-            style={{
-              transition: "y 0.3s cubic-bezier(.4,2,.6,1), transform 0.3s cubic-bezier(.4,2,.6,1)",
-              transformOrigin: "16px 17px",
-              transform: open
-                ? "rotate(-45deg)"
-                : "rotate(0deg)",
-            }}
-          />
-        </g>
-      </svg>
-    );
-  }
-
   return (
     <>
       {/* Mobile Header Bar */}
       <header
-        className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 flex items-center h-14 px-4"
+        className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white flex items-center h-14 px-4"
         style={{ height: `${mobileHeaderHeight}px` }}
       >
         <button
           aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
           onClick={() => setMobileNavOpen((open) => !open)}
           type="button"
-          className="bg-white rounded p-2 shadow border flex items-center justify-center"
+          className="flex items-center justify-center"
         >
           <span className="sr-only">
             {mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
           </span>
-          <HamburgerXIcon open={mobileNavOpen} />
+          <TwoLineHamburgerXIcon open={mobileNavOpen} />
         </button>
       </header>
 

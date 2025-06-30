@@ -203,7 +203,7 @@ export const artworkType = defineType({
       name: 'importance',
       title: 'Importance',
       type: 'number',
-      description: 'Higher numbers mean higher importance for sorting.',
+      description: 'Lower numbers mean higher importance for sorting.',
     }),
   ],
 })

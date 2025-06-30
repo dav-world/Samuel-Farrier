@@ -8,19 +8,20 @@ interface SanityItem {
   _id: string;
   name: string;
   slug: string;
+  importance?: number;
+  _createdAt: string;
 }
 interface Artwork extends SanityItem {
   available?: string;
   visibility?: string;
 }
 interface Exhibition extends SanityItem {}
-interface Commercial extends SanityItem {}
 
 export default function MainAppLayout({ children }: { children: ReactNode }) {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([]);
-  const [commercials, setCommercials] = useState<Commercial[]>([]);
+  const [commercials, setCommercials] = useState<SanityItem[]>([]);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Fetch data on mount
@@ -30,7 +31,7 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
     fetchCommercials();
   }, []);
 
-  // Only fetch artworks that are available and public
+  // Only fetch artworks that are available and public, and get importance/_createdAt
   const fetchArtworks = async () => {
     try {
       const artworkResponse = await client.fetch<Artwork[]>(`
@@ -38,22 +39,37 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
           _type == "artwork" &&
           lower(available) == "yes" &&
           lower(visibility) == "public"
-        ] | order(year desc, name asc) {
-          _id, name, "slug": slug.current, available, visibility
+        ] {
+          _id, name, "slug": slug.current, available, visibility, importance, _createdAt
         }
       `);
-      setArtworks(artworkResponse);
+
+      // Sort: importance ascending (1 is most important), then by _createdAt (oldest first)
+      const withImportance = artworkResponse.filter(a => typeof a.importance === 'number');
+      const withoutImportance = artworkResponse.filter(a => typeof a.importance !== 'number');
+      withImportance.sort((a, b) => (a.importance! - b.importance!));
+      withoutImportance.sort((a, b) => new Date(a._createdAt).getTime() - new Date(b._createdAt).getTime());
+      setArtworks([...withImportance, ...withoutImportance]);
     } catch (error) {
       console.error("Failed to fetch artworks:", error);
     }
   };
 
+  // Fetch exhibitions with importance/_createdAt
   const fetchExhibitions = async () => {
     try {
       const exhibitionResponse = await client.fetch<Exhibition[]>(`
-        *[_type == "exhibition"] | order(year desc, name asc) { _id, name, "slug": slug.current }
+        *[_type == "exhibition"] {
+          _id, name, "slug": slug.current, importance, _createdAt
+        }
       `);
-      setExhibitions(exhibitionResponse);
+
+      // Sort: importance ascending (1 is most important), then by _createdAt (oldest first)
+      const withImportance = exhibitionResponse.filter(e => typeof e.importance === 'number');
+      const withoutImportance = exhibitionResponse.filter(e => typeof e.importance !== 'number');
+      withImportance.sort((a, b) => (a.importance! - b.importance!));
+      withoutImportance.sort((a, b) => new Date(a._createdAt).getTime() - new Date(b._createdAt).getTime());
+      setExhibitions([...withImportance, ...withoutImportance]);
     } catch (error) {
       console.error("Failed to fetch exhibitions:", error);
     }
@@ -61,7 +77,7 @@ export default function MainAppLayout({ children }: { children: ReactNode }) {
 
   const fetchCommercials = async () => {
     try {
-      const commercialResponse = await client.fetch<Commercial[]>(`
+      const commercialResponse = await client.fetch<SanityItem[]>(`
         *[_type == "commercial"] | order(date desc, name asc) { _id, name, "slug": slug.current }
       `);
       setCommercials(commercialResponse);

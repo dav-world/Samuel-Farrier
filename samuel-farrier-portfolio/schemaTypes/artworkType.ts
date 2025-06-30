@@ -199,5 +199,11 @@ export const artworkType = defineType({
         layout: 'tags', // Allows you to add multiple options as tags
       },
     }),
+    defineField({
+      name: 'importance',
+      title: 'Importance',
+      type: 'number',
+      description: 'Higher numbers mean higher importance for sorting.',
+    }),
   ],
 })

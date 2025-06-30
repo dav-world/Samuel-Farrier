@@ -3,6 +3,56 @@ import Link from 'next/link';
 import client from '../lib/sanity';
 import { urlFor } from '../lib/sanityImage';
 
+const UNIFORM_WIDTH = 600;
+
+const outerCenteredStyle: React.CSSProperties = {
+  width: '100%',
+  minHeight: '100vh',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  textAlign: 'center',
+  boxSizing: 'border-box',
+};
+
+const containerStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: `${UNIFORM_WIDTH}px`,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  boxSizing: 'border-box',
+};
+
+const imageContainerStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: `${UNIFORM_WIDTH}px`,
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  alignItems: 'center',
+  margin: '1rem 0',
+  overflow: 'hidden',
+};
+
+const imageStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: `${UNIFORM_WIDTH}px`,
+  height: 'auto',
+  objectFit: 'contain',
+  display: 'block',
+};
+
+const artworkMetaOneLineStyle: React.CSSProperties = {
+  textAlign: 'center',
+  marginTop: '0.5rem',
+  fontSize: '0.75em',
+  color: '#444',
+  whiteSpace: 'pre-line',
+  fontStyle: 'italic',
+};
+
 interface ArtworkImageWithArtwork {
   _key: string;
   asset: {
@@ -26,6 +76,7 @@ interface ArtworkImageWithArtwork {
   dimensions?: string;
   medium?: string;
   date?: string;
+  importance?: number;
 }
 
 interface ExhibitionImageWithExhibition {
@@ -47,7 +98,8 @@ interface ExhibitionImageWithExhibition {
   exhibitionName: string;
   type: 'exhibition';
   createdAt: string;
-  year?: number | string; // <-- add year
+  year?: number | string;
+  importance?: number;
 }
 
 function getFixedWidthDimensions(asset: any, fixedWidth: number) {
@@ -60,7 +112,7 @@ function getFixedWidthDimensions(asset: any, fixedWidth: number) {
 }
 
 async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | ExhibitionImageWithExhibition)[]> {
-  const artworkQuery = `*[_type == "artwork" && homescreen == true && defined(images) && count(images) > 0]{
+  const artworkQuery = `*[_type == "artwork" && homescreen == true && defined(images) && count(images) > 0 && lower(available) == "yes" && lower(visibility) == "public"]{
     name,
     "slug": slug.current,
     _createdAt,
@@ -68,6 +120,7 @@ async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | Exhi
     dimensions,
     medium,
     date,
+    importance,
     images[]{
       _key,
       asset->{
@@ -80,12 +133,12 @@ async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | Exhi
     }
   }`;
 
-  // Add year to exhibition query
   const exhibitionQuery = `*[_type == "exhibition" && homescreen == true && defined(images) && count(images) > 0]{
     name,
     "slug": slug.current,
     _createdAt,
     year,
+    importance,
     images[]{
       _key,
       asset->{
@@ -100,8 +153,8 @@ async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | Exhi
 
   try {
     const [artworks, exhibitions] = await Promise.all([
-      client.fetch<{ name: string; slug: string; images: any[]; _createdAt: string; year?: number | string; dimensions?: string; medium?: string; date?: string }[]>(artworkQuery),
-      client.fetch<{ name: string; slug: string; images: any[]; _createdAt: string; year?: number | string }[]>(exhibitionQuery),
+      client.fetch<{ name: string; slug: string; images: any[]; _createdAt: string; year?: number | string; dimensions?: string; medium?: string; date?: string; importance?: number }[]>(artworkQuery),
+      client.fetch<{ name: string; slug: string; images: any[]; _createdAt: string; year?: number | string; importance?: number }[]>(exhibitionQuery),
     ]);
 
     const artworkImages: ArtworkImageWithArtwork[] = artworks.flatMap(artwork =>
@@ -117,6 +170,7 @@ async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | Exhi
           dimensions: artwork.dimensions,
           medium: artwork.medium,
           date: artwork.date,
+          importance: artwork.importance,
         }))
     );
 
@@ -129,65 +183,36 @@ async function getAllHomescreenImages(): Promise<(ArtworkImageWithArtwork | Exhi
           exhibitionName: exhibition.name,
           type: 'exhibition' as const,
           createdAt: exhibition._createdAt,
-          year: exhibition.year, // <-- map year
+          year: exhibition.year,
+          importance: exhibition.importance,
         }))
     );
 
-    return [...artworkImages, ...exhibitionImages].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    // Sort: first by defined importance (ascending, 1 is most important), then by createdAt (oldest first)
+    const withImportance = [...artworkImages, ...exhibitionImages].filter(img => typeof img.importance === 'number');
+    const withoutImportance = [...artworkImages, ...exhibitionImages].filter(img => typeof img.importance !== 'number');
+
+    withImportance.sort((a, b) => (a.importance! - b.importance!));
+    withoutImportance.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    return [...withImportance, ...withoutImportance];
   } catch (error) {
     console.error("Failed to fetch homescreen images:", error);
     return [];
   }
 }
 
-const imageContainerStyle: React.CSSProperties = {
-  maxWidth: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  alignItems: 'center',
-  margin: '1rem 0',
-  overflow: 'hidden',
-};
-
-const imageStyle: React.CSSProperties = {
-  width: '100%',
-  height: 'auto',
-  objectFit: 'contain',
-  display: 'block',
-};
-
-const artworkMetaOneLineStyle: React.CSSProperties = {
-  textAlign: 'center',
-  marginTop: '0.5rem',
-  fontSize: '0.75em',
-  color: '#444',
-  whiteSpace: 'pre-line',
-  fontStyle: 'italic',
-};
-
 export default async function AllHomescreenImagesPage() {
   const images = await getAllHomescreenImages();
 
   // Target display width for the image container (in px)
-  const sanityImageDisplayWidth = 600;
+  const sanityImageDisplayWidth = UNIFORM_WIDTH;
   // Request up to 2x for retina screens (1200px)
   const sanityImageMaxWidth = sanityImageDisplayWidth * 2;
 
   return (
-    <div>
-      <div
-        style={{
-          width: '100%',
-          maxWidth: `${sanityImageDisplayWidth}px`,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          boxSizing: 'border-box',
-        }}
-      >
+    <div style={outerCenteredStyle}>
+      <div style={containerStyle}>
         {images.length === 0 ? (
           <div style={{ width: '100%', textAlign: 'center', color: '#718096' }}>
             <p>No homescreen images found.</p>

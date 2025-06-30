@@ -12,6 +12,8 @@ interface Artwork {
   categories: string[];
   available?: string;
   visibility?: string;
+  importance?: number;
+  _createdAt: string;
 }
 
 interface CategoryPageProps {
@@ -37,20 +39,31 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       images,
       categories,
       available,
-      visibility
+      visibility,
+      importance,
+      _createdAt
     }`,
     { category: decodedCategory }
   );
+
+  // Sort: first by defined importance (ascending, 1 is most important), then by createdAt (oldest first)
+  const withImportance = artworks.filter(a => typeof a.importance === 'number');
+  const withoutImportance = artworks.filter(a => typeof a.importance !== 'number');
+
+  withImportance.sort((a, b) => (a.importance! - b.importance!));
+  withoutImportance.sort((a, b) => new Date(a._createdAt).getTime() - new Date(b._createdAt).getTime());
+
+  const sortedArtworks = [...withImportance, ...withoutImportance];
 
   return (
     <div>
       <h1>Category: {decodedCategory}</h1>
 
-      {artworks.length === 0 ? (
+      {sortedArtworks.length === 0 ? (
         <p>No artworks found in this category.</p>
       ) : (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
-          {artworks.map((artwork) => {
+          {sortedArtworks.map((artwork) => {
             // Defensive check for image asset
             const firstImage = Array.isArray(artwork.images) && artwork.images.length > 0 ? artwork.images[0] : null;
             const hasAsset = firstImage && firstImage.asset;

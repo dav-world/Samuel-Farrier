@@ -4,18 +4,59 @@ import { PortableTextBlock } from '@sanity/types';
 import Link from 'next/link';
 import Image from 'next/image';
 
-// Type for Sanity image block
+// Uniform width for images and content containers
+const UNIFORM_WIDTH = 600;
+
+const outerContainerStyle: React.CSSProperties = {
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+};
+
+const contentContainerStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: `${UNIFORM_WIDTH}px`,
+  margin: '0 auto',
+  textAlign: 'left',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+};
+
+const imageContainerStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: `${UNIFORM_WIDTH}px`,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  margin: '1.5rem 0',
+  overflow: 'hidden',
+};
+
+const imageStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: `${UNIFORM_WIDTH}px`,
+  height: 'auto',
+  objectFit: 'contain',
+  display: 'block',
+};
+
+const blockImageStyle: React.CSSProperties = {
+  width: '100%',
+  maxWidth: `${UNIFORM_WIDTH}px`,
+  height: 'auto',
+  objectFit: 'contain',
+  display: 'block',
+  margin: '1rem 0',
+};
+
 interface SanityImageBlock {
   _type: 'image';
   asset: any;
   alt?: string;
   caption?: string;
   [key: string]: any;
-}
-
-interface Category {
-  name: string;
-  slug: string;
 }
 
 interface Artwork {
@@ -39,38 +80,12 @@ interface Artwork {
   price: number | null;
   notes: PortableTextBlock[];
   relatedExhibitions?: Array<{ _id: string; name: string; slug: string }>;
-  categories: Category[]; // Now an array of objects with name and slug
+  categories: string[];
 }
 
 interface ArtworkDetailProps {
   artwork: Artwork;
 }
-
-const imageContainerStyle: React.CSSProperties = {
-  maxWidth: '100%',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  margin: '1rem 0',
-  overflow: 'hidden',
-};
-
-const imageStyle: React.CSSProperties = {
-  width: '100%',
-  height: 'auto',
-  objectFit: 'contain',
-  display: 'block',
-};
-
-const blockImageStyle: React.CSSProperties = {
-  width: '100%',
-  height: 'auto',
-  objectFit: 'contain',
-  display: 'block',
-  margin: '1rem 0',
-};
-
-const FIXED_IMAGE_WIDTH = 600;
 
 // Helper to get fixed width and aspect-ratio-correct height
 function getFixedWidthDimensions(asset: any, fixedWidth: number) {
@@ -88,68 +103,69 @@ function isSanityImageBlock(block: any): block is SanityImageBlock {
 
 const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
   if (!artwork) {
-    return <div>Artwork not found</div>;
+    return <div style={outerContainerStyle}><div style={contentContainerStyle}>Artwork not found</div></div>;
   }
 
   return (
-    <div>
-      <h1>{artwork.name}</h1>
-      <p>{artwork.year}</p>
-      {artwork.date && <p>{new Date(artwork.date).toLocaleDateString()}</p>}
-      <p>{artwork.dimensions}</p>
-      <p>{artwork.medium}</p>
+    <div style={outerContainerStyle}>
+      <div style={contentContainerStyle}>
+        <h1>{artwork.name}</h1>
+        <p>{artwork.year}</p>
+        {artwork.date && <p>{new Date(artwork.date).toLocaleDateString()}</p>}
+        <p>{artwork.dimensions}</p>
+        <p>{artwork.medium}</p>
 
-      {/* Description */}
-      {artwork.description?.length > 0 && (
-        <div>
-          {artwork.description.map((block, index) => {
-            if (block._type === 'block' && Array.isArray(block.children)) {
-              return (
-                <p key={index}>
-                  {block.children.map((child: any, childIndex: number) => {
-                    const linkMark = child.marks?.find((mark: string) => {
-                      return Array.isArray(block.markDefs) && block.markDefs.some((def) => def._key === mark && def._type === 'link');
-                    });
+        {/* Description */}
+        {artwork.description?.length > 0 && (
+          <div>
+            {artwork.description.map((block, index) => {
+              if (block._type === 'block' && Array.isArray(block.children)) {
+                return (
+                  <p key={index}>
+                    {block.children.map((child: any, childIndex: number) => {
+                      const linkMark = child.marks?.find((mark: string) => {
+                        return Array.isArray(block.markDefs) && block.markDefs.some((def) => def._key === mark && def._type === 'link');
+                      });
 
-                    if (linkMark) {
-                      const link = Array.isArray(block.markDefs) ? block.markDefs.find((def) => def._key === linkMark) : undefined;
-                      return (
-                        <a
-                          key={childIndex}
-                          href={link?.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: 'blue', textDecoration: 'underline' }}
-                        >
-                          {child.text}
-                        </a>
-                      );
-                    }
-                    return <span key={childIndex}>{child.text}</span>;
-                  })}
-                </p>
-              );
-            }
-            return null;
-          })}
-        </div>
-      )}
+                      if (linkMark) {
+                        const link = Array.isArray(block.markDefs) ? block.markDefs.find((def) => def._key === linkMark) : undefined;
+                        return (
+                          <a
+                            key={childIndex}
+                            href={link?.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: 'blue', textDecoration: 'underline' }}
+                          >
+                            {child.text}
+                          </a>
+                        );
+                      }
+                      return <span key={childIndex}>{child.text}</span>;
+                    })}
+                  </p>
+                );
+              }
+              return null;
+            })}
+          </div>
+        )}
 
-      {/* Images */}
-      <div>
+        {/* Images */}
         {artwork.images && artwork.images.length > 0 && (
           <div>
             {artwork.images.map(image => {
               if (isSanityImageBlock(image)) {
-                const { width, height } = getFixedWidthDimensions(image.asset, FIXED_IMAGE_WIDTH);
+                const { width, height } = getFixedWidthDimensions(image.asset, UNIFORM_WIDTH);
                 return (
-                  <div key={image._key} style={{ ...imageContainerStyle, width }}>
+                  <div key={image._key} style={imageContainerStyle}>
                     <Image
-                      src={urlFor(image.asset).url()}
+                      src={urlFor(image.asset).width(UNIFORM_WIDTH * 2).auto('format').quality(80).url()}
                       alt={image.alt || ''}
-                      width={width}
-                      height={height}
+                      width={width * 2}
+                      height={height * 2}
                       style={imageStyle}
+                      sizes={`(max-width: ${UNIFORM_WIDTH}px) 100vw, ${UNIFORM_WIDTH}px`}
                     />
                     {image.caption && <p style={{ textAlign: 'center', marginTop: '0.5rem' }}>{image.caption}</p>}
                   </div>
@@ -159,142 +175,143 @@ const ArtworkDetail: React.FC<ArtworkDetailProps> = ({ artwork }) => {
             })}
           </div>
         )}
-      </div>
 
-      {/* Videos */}
-      {artwork.videos && Array.isArray(artwork.videos) && artwork.videos.length > 0 && (
-        <div>
-          <h2>Videos</h2>
-          {artwork.videos.map((videoUrl, index) => {
-            const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
-            const isVimeo = videoUrl.includes('vimeo.com');
+        {/* Videos */}
+        {artwork.videos && Array.isArray(artwork.videos) && artwork.videos.length > 0 && (
+          <div>
+            <h2>Videos</h2>
+            {artwork.videos.map((videoUrl, index) => {
+              const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+              const isVimeo = videoUrl.includes('vimeo.com');
 
-            return (
-              <div key={`video-${index}`} style={{ margin: '1rem 0' }}>
-                {isYouTube ? (
-                  <iframe
-                    width="560"
-                    height="315"
-                    src={videoUrl.replace('watch?v=', 'embed/')}
-                    title="YouTube video player"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    style={imageContainerStyle}
-                  ></iframe>
-                ) : isVimeo ? (
-                  <iframe
-                    src={videoUrl.replace('vimeo.com', 'player.vimeo.com/video')}
-                    width="640"
-                    height="360"
-                    frameBorder="0"
-                    allow="autoplay; fullscreen; picture-in-picture"
-                    allowFullScreen
-                    style={imageContainerStyle}
-                  ></iframe>
-                ) : (
-                  <a href={videoUrl} target="_blank" rel="noopener noreferrer">
-                    {videoUrl}
-                  </a>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Press */}
-      {artwork.press?.length > 0 && (
-        <div>
-          <h2>Press</h2>
-          {artwork.press.map((block, index) => {
-            if (block._type === 'block' && Array.isArray(block.children)) {
               return (
-                <p key={index}>
-                  {block.children.map((child: any, childIndex: number) => {
-                    const linkMark = child.marks?.find((mark: string) => {
-                      return Array.isArray(block.markDefs) && block.markDefs.some((def) => def._key === mark && def._type === 'link');
-                    });
-
-                    if (linkMark) {
-                      const link = Array.isArray(block.markDefs) ? block.markDefs.find((def) => def._key === linkMark) : undefined;
-                      return (
-                        <a
-                          key={childIndex}
-                          href={link?.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: 'blue', textDecoration: 'underline' }}
-                        >
-                          {child.text}
-                        </a>
-                      );
-                    }
-                    return <span key={childIndex}>{child.text}</span>;
-                  })}
-                </p>
-              );
-            } else if (isSanityImageBlock(block)) {
-              const { width, height } = getFixedWidthDimensions(block.asset, FIXED_IMAGE_WIDTH);
-              return (
-                <div key={index} style={{ ...imageContainerStyle, width }}>
-                  <Image
-                    src={urlFor(block.asset).url()}
-                    alt="Press image"
-                    width={width}
-                    height={height}
-                    style={blockImageStyle}
-                  />
+                <div key={`video-${index}`} style={{ margin: '1rem 0' }}>
+                  {isYouTube ? (
+                    <iframe
+                      width={UNIFORM_WIDTH}
+                      height={Math.round(UNIFORM_WIDTH * 9 / 16)}
+                      src={videoUrl.replace('watch?v=', 'embed/')}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      style={imageContainerStyle}
+                    ></iframe>
+                  ) : isVimeo ? (
+                    <iframe
+                      src={videoUrl.replace('vimeo.com', 'player.vimeo.com/video')}
+                      width={UNIFORM_WIDTH}
+                      height={Math.round(UNIFORM_WIDTH * 9 / 16)}
+                      frameBorder="0"
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                      style={imageContainerStyle}
+                    ></iframe>
+                  ) : (
+                    <a href={videoUrl} target="_blank" rel="noopener noreferrer">
+                      {videoUrl}
+                    </a>
+                  )}
                 </div>
               );
-            } else {
-              return null;
-            }
-          })}
-        </div>
-      )}
+            })}
+          </div>
+        )}
 
-      {/* Exhibited */}
-      {artwork.exhibited && (
-        <div>
-          {artwork.exhibitionLink && (
-            <p>
-              Exhibition Link: <a href={artwork.exhibitionLink} target="_blank" rel="noopener noreferrer">{artwork.exhibitionLink}</a>
-            </p>
-          )}
-        </div>
-      )}
+        {/* Press */}
+        {artwork.press?.length > 0 && (
+          <div>
+            <h2>Press</h2>
+            {artwork.press.map((block, index) => {
+              if (block._type === 'block' && Array.isArray(block.children)) {
+                return (
+                  <p key={index}>
+                    {block.children.map((child: any, childIndex: number) => {
+                      const linkMark = child.marks?.find((mark: string) => {
+                        return Array.isArray(block.markDefs) && block.markDefs.some((def) => def._key === mark && def._type === 'link');
+                      });
 
-      {/* Related Exhibitions */}
-      {artwork?.relatedExhibitions && artwork?.relatedExhibitions.length > 0 && (
-        <div>
-          <h2>Related Exhibitions</h2>
-          {artwork?.relatedExhibitions.map((exhibition, idx) => (
-            <p key={exhibition._id || idx}>
-              <Link href={`/exhibition/${exhibition.slug}`} className="text-blue-500 hover:underline">{exhibition.name}</Link>
-            </p>
-          ))}
-        </div>
-      )}
+                      if (linkMark) {
+                        const link = Array.isArray(block.markDefs) ? block.markDefs.find((def) => def._key === linkMark) : undefined;
+                        return (
+                          <a
+                            key={childIndex}
+                            href={link?.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: 'blue', textDecoration: 'underline' }}
+                          >
+                            {child.text}
+                          </a>
+                        );
+                      }
+                      return <span key={childIndex}>{child.text}</span>;
+                    })}
+                  </p>
+                );
+              } else if (isSanityImageBlock(block)) {
+                const { width, height } = getFixedWidthDimensions(block.asset, UNIFORM_WIDTH);
+                return (
+                  <div key={index} style={imageContainerStyle}>
+                    <Image
+                      src={urlFor(block.asset).width(UNIFORM_WIDTH * 2).auto('format').quality(80).url()}
+                      alt="Press image"
+                      width={width * 2}
+                      height={height * 2}
+                      style={blockImageStyle}
+                      sizes={`(max-width: ${UNIFORM_WIDTH}px) 100vw, ${UNIFORM_WIDTH}px`}
+                    />
+                  </div>
+                );
+              } else {
+                return null;
+              }
+            })}
+          </div>
+        )}
 
-      {/* Categories with slugs */}
-      {artwork.categories && artwork.categories.length > 0 && (
-        <p>
-          Categories:{' '}
-          {artwork.categories.map((category, idx) => (
-            <React.Fragment key={category.slug || idx}>
-              <Link
-                href={`/category/${encodeURIComponent(category.slug)}`}
-                className="text-blue-500 hover:underline"
-                aria-label={`View all artwork in category ${category.name}`}
-              >
-                {category.name}
-              </Link>
-              {idx < artwork.categories.length - 1 && ', '}
-            </React.Fragment>
-          ))}
-        </p>
-      )}
+        {/* Exhibited */}
+        {artwork.exhibited && (
+          <div>
+            {artwork.exhibitionLink && (
+              <p>
+                Exhibition Link: <a href={artwork.exhibitionLink} target="_blank" rel="noopener noreferrer">{artwork.exhibitionLink}</a>
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Related Exhibitions */}
+        {artwork?.relatedExhibitions && artwork?.relatedExhibitions.length > 0 && (
+          <div>
+            <h2>Related Exhibitions</h2>
+            {artwork?.relatedExhibitions.map((exhibition, idx) => (
+              <p key={exhibition._id || idx}>
+                <Link href={`/exhibition/${exhibition.slug}`} className="text-blue-500 hover:underline">{exhibition.name}</Link>
+              </p>
+            ))}
+          </div>
+        )}
+
+        {/* Categories as strings */}
+        {artwork.categories && artwork.categories.length > 0 && (
+          <p>
+            Categories:{' '}
+            {artwork.categories.map((category, idx) => (
+              <React.Fragment key={category || idx}>
+                <Link
+                  href={`/category/${encodeURIComponent(category)}`}
+                  className="text-blue-500 hover:underline"
+                  aria-label={`View all artwork in category ${category}`}
+                >
+                  {category}
+                </Link>
+                {idx < artwork.categories.length - 1 && ', '}
+              </React.Fragment>
+            ))}
+          </p>
+        )}
+      </div>
     </div>
   );
 };

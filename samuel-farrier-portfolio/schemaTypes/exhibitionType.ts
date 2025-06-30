@@ -135,6 +135,12 @@ export const exhibitionType = defineType({
       type: 'boolean',
     }),
     defineField({
+      name: 'importance',
+      title: 'Importance',
+      type: 'number',
+      description: 'Higher numbers mean higher importance for sorting.',
+    }),
+    defineField({
       name: 'notes',
       title: 'Notes',
       type: 'array',

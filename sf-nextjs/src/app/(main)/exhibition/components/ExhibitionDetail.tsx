@@ -116,7 +116,7 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
         )}
 
         {/* Images */}
-        {exhibition.images?.length > 0 && (
+        {Array.isArray(exhibition.images) && exhibition.images.length > 0 && (
           <div>
             {exhibition.images.map((image, imageIndex) => {
               if (image.asset && image.asset._type && image.asset._type.startsWith('sanity.imageAsset')) {
@@ -162,33 +162,35 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
         )}
 
         {/* Display Press */}
-        {exhibition.press?.length > 0 && (
+        {Array.isArray(exhibition.press) && exhibition.press.length > 0 && (
           <div>
             {exhibition.press.map((block, index) => (
               <p key={index}>
-                {block.children?.map((child: any, childIndex: number) => (
-                  <span key={child._key || childIndex}>{child.text}</span>
-                ))}
+                {Array.isArray(block.children) &&
+                  block.children.map((child: any, childIndex: number) => (
+                    <span key={child._key || childIndex}>{child.text}</span>
+                  ))}
               </p>
             ))}
           </div>
         )}
 
         {/* Display Notes */}
-        {exhibition.notes?.length > 0 && (
+        {Array.isArray(exhibition.notes) && exhibition.notes.length > 0 && (
           <div>
             {exhibition.notes.map((block, index) => (
               <p key={index}>
-                {block.children?.map((child: any, childIndex: number) => (
-                  <span key={child._key || childIndex}>{child.text}</span>
-                ))}
+                {Array.isArray(block.children) &&
+                  block.children.map((child: any, childIndex: number) => (
+                    <span key={child._key || childIndex}>{child.text}</span>
+                  ))}
               </p>
             ))}
           </div>
         )}
 
         {/* Related Artworks */}
-        {exhibition.relatedArtworks && exhibition.relatedArtworks.length > 0 && (
+        {Array.isArray(exhibition.relatedArtworks) && exhibition.relatedArtworks.length > 0 && (
           <div>
             <h2>Related Artworks</h2>
             {exhibition.relatedArtworks
@@ -213,7 +215,7 @@ const ExhibitionDetail: React.FC<ExhibitionDetailProps> = ({ exhibition }) => {
         )}
 
         {/* Videos */}
-        {exhibition.videos?.length > 0 && (
+        {Array.isArray(exhibition.videos) && exhibition.videos.length > 0 && (
           <div>
             {exhibition.videos.map((videoUrl, index) => {
               const isYouTube =
